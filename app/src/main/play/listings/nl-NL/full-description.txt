@@ -1,0 +1,27 @@
+Dit is een fork van de Synthing-Android-wrapper voor Syncthing die vele verbeteringen brengt, waaronder:
+* Individuele synchrinisatie-omstandigheden kunnen worden toegepast per appparaat en map
+* Pagina met recente wijzigingen, druk om bestanden te openen
+* Hoog accuverbruik is opgelost
+* Ondersteuning voor Android 8 en 9
+
+Syncthing vervangt niet-vrije diensten door iets opens, betrouwbaars en gedecentraliseerds. Je gegevens behoren enkel jou toe en jij bepaalt waar ze worden opgeslagen, of ze gedeeld worden met een derde partij en hoe ze over het internet verzonden worden.
+
+Doel van de fork:
+* Verbeteringen ontwikkelen en uitproberen, in samenwerking met de gemeenschap
+* Wrapper vaker uitbrengen om bugs i.c.m. de syncthing-submodule op te sporen en op te lossen
+* Verbeteringen configureerbaar maken, zoadat gebruikers ze makkelijk in en uit kunnen schakelen
+
+Vergelijking tussen upstream en de fork op het moment van schrijven:
+* Beiden bevatten het uitvoerbare syncthing-bestand, gebouwd met de officiële broncode op GitHub:syncthing/syncthing
+* Synchronisatiefunctionaliteit en -betrouwbaarheid is afhankelijk van de versie van de syncthing-submodule
+* De fork wordt geaccepteerd door upstream en soms worden mijn verbeteringen doorgevoerd
+* Strategie en moment van uitbrengen zijn verschillend
+* Alleen de wrapper met de Android-app wordt aangepakt door de fork
+
+Website: https://github.com/Catfriend1/syncthing-android
+
+Broncode: https://github.com/Catfriend1/syncthing-android
+
+Problemen: https://github.com/Catfriend1/syncthing-android/issues
+
+Vertaling: https://www.transifex.com/projects/p/syncthing-android-1

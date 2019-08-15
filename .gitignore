@@ -1,0 +1,57 @@
+# built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+build/
+gen/
+obj/
+.gradle/
+
+# Local configuration file (sdk path, etc)
+local.properties
+project.properties
+
+# Intellij project files
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Gradle wrapper
+gradle/wrapper/gradle/
+gradle/wrapper/gradlew*
+
+# Prebuilt-go
+syncthing/go
+syncthing/go.tgz
+syncthing/go.zip
+
+# Android NDK
+syncthing/android-ndk-r*
+syncthing/ndk.zip
+
+# Go modules
+syncthing/pkg/mod/
+
+# MinGit
+syncthing/mingit
+syncthing/mingit.zip
+
+# External build artifacts
+ext/
+
+# push-to-device after build marker file
+\#enable_push_to_device
+
+# Unsupported translations
+app/src/main/play/listings/nb
+app/src/main/play/listings/nl-BE
+app/src/main/play/listings/nn

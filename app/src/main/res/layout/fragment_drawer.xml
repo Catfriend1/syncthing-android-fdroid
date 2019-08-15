@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/bottomActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical"
+        app:divider="@drawable/list_divider"
+        android:background="?android:windowBackground"
+        android:elevation="2dp"
+        app:showDividers="beginning">
+
+        <TextView
+            android:id="@+id/drawerActionSettings"
+            style="@style/Widget.Syncthing.TextView.Label"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:drawableLeft="@drawable/ic_settings_black_24dp"
+            android:drawableStart="@drawable/ic_settings_black_24dp"
+            android:text="@string/settings_title"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/drawerActionExit"
+            style="@style/Widget.Syncthing.TextView.Label"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:drawableLeft="@drawable/ic_close_black_24dp"
+            android:drawableStart="@drawable/ic_close_black_24dp"
+            android:text="@string/exit"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottomActions"
+        android:layout_alignParentTop="true"
+        android:fillViewport="true"
+        android:fadeScrollbars="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/list_divider" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:orientation="vertical"
+                android:paddingLeft="@dimen/abc_action_bar_content_inset_material"
+                android:paddingRight="@dimen/abc_action_bar_content_inset_material">
+
+                <TextView
+                    android:id="@+id/syncthingVersion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/syncthing_version_title"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                    android:textColor="?android:textColorSecondary" />
+
+                <TextView
+                    android:id="@+id/version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Caption" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/list_divider" />
+
+            <TextView
+                android:id="@+id/drawerActionShowQrCode"
+                style="@style/Widget.Syncthing.TextView.Label"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:clickable="true"
+                android:drawableLeft="@drawable/ic_qrcode_black_24dp_active"
+                android:drawableStart="@drawable/ic_qrcode_black_24dp_active"
+                android:focusable="true"
+                android:text="@string/show_device_id" />
+
+            <TextView
+                android:id="@+id/drawerActionRecentChanges"
+                style="@style/Widget.Syncthing.TextView.Label"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:drawableLeft="@drawable/ic_history_black_24dp_active"
+                android:drawableStart="@drawable/ic_history_black_24dp_active"
+                android:text="@string/recent_changes_title"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/drawerActionWebGui"
+                style="@style/Widget.Syncthing.TextView.Label"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:drawableLeft="@drawable/ic_web_black_24dp"
+                android:drawableStart="@drawable/ic_web_black_24dp"
+                android:text="@string/web_gui_title"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/drawerActionImportExport"
+                style="@style/Widget.Syncthing.TextView.Label"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:drawableLeft="@drawable/ic_import_export_black_24dp"
+                android:drawableStart="@drawable/ic_import_export_black_24dp"
+                android:text="@string/category_backup"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/drawerActionRestart"
+                style="@style/Widget.Syncthing.TextView.Label"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:drawableLeft="@drawable/ic_autorenew_black_24dp"
+                android:drawableStart="@drawable/ic_autorenew_black_24dp"
+                android:text="@string/restart"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/drawerActionTipsAndTricks"
+                style="@style/Widget.Syncthing.TextView.Label"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:drawableLeft="@drawable/ic_help_outline_black_24dp"
+                android:drawableStart="@drawable/ic_help_outline_black_24dp"
+                android:text="@string/tips_and_tricks_title"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>

@@ -1,0 +1,114 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.github.ben-manes.versions'
+apply plugin: 'com.github.triplet.play'
+
+dependencies {
+    implementation 'eu.chainfire:libsuperuser:1.1.0.201903290044'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+    implementation 'com.google.zxing:android-integration:3.3.0'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'org.mindrot:jbcrypt:0.4'
+    // com.google.guava:guava:24.1-jre will crash on Android 5.x
+    implementation 'com.google.guava:guava:27.1-android'
+    implementation 'com.annimon:stream:1.2.1'
+    implementation 'com.android.volley:volley:1.1.1'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'com.google.dagger:dagger:2.23.1'
+    annotationProcessor "com.google.dagger:dagger-compiler:2.23.1"
+    androidTestImplementation 'androidx.test:rules:1.1.0'
+    androidTestImplementation 'androidx.annotation:annotation:1.0.0'
+}
+
+apply from: 'versions.gradle'
+def ourVersionCode = versionMajor * 1000000 + versionMinor * 10000 + versionPatch * 100 + versionWrapper
+def ourVersionName = "${versionMajor}.${versionMinor}.${versionPatch}.${versionWrapper}"
+
+android {
+    // Changes to these values need to be reflected in `.travis.yml`
+    compileSdkVersion 29
+    buildToolsVersion '29.0.0'
+
+    buildTypes.debug.applicationIdSuffix ".debug"
+    dataBinding.enabled = true
+
+    playConfigs {
+        defaultAccountConfig {
+            serviceAccountCredentials = file(System.getenv("SYNCTHING_RELEASE_PLAY_ACCOUNT_CONFIG_FILE") ?: 'keys.json')
+        }
+    }
+    defaultConfig {
+        applicationId "com.github.catfriend1.syncthingandroid"
+        minSdkVersion 16
+        targetSdkVersion 29
+        versionCode ourVersionCode
+        versionName ourVersionName
+        testApplicationId 'com.github.catfriend1.syncthingandroid.test'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    signingConfigs {
+        release {
+            storeFile = {
+                def path = System.getenv("SYNCTHING_RELEASE_STORE_FILE")
+                return (path) ? file(path) : null
+            }()
+            storePassword System.getenv("SIGNING_PASSWORD") ?: ""
+            keyAlias System.getenv("SYNCTHING_RELEASE_KEY_ALIAS") ?: ""
+            keyPassword System.getenv("SIGNING_PASSWORD") ?: ""
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.release.storeFile ? signingConfigs.release : null
+        }
+        debug {
+            gradle.buildFinished {
+                buildResult -> if (buildResult.failure) {
+                    logger.lifecycle("BUILD FAILED")
+                }
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        abortOnError true
+    }
+}
+
+play {
+    serviceAccountCredentials = file(System.getenv("SYNCTHING_RELEASE_PLAY_ACCOUNT_CONFIG_FILE") ?: 'keys.json')
+    track = 'beta'
+    resolutionStrategy = 'ignore'
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name == 'compileDebugSources') {
+        // task.dependsOn lint
+        // task.mustRunAfter lint
+    }
+}
+
+/**
+ * Some languages are not supported by Google Play, so we ignore them.
+ */
+task deleteUnsupportedPlayTranslations(type: Delete) {
+    delete 'src/main/play/listings/el-EL/'
+    delete 'src/main/play/listings/en/'
+    delete 'src/main/play/listings/eu/'
+    delete 'src/main/play/listings/nb/'
+    delete 'src/main/play/listings/nl_BE/'
+    delete 'src/main/play/listings/nl-BE/'
+    delete 'src/main/play/listings/nn/'
+    delete 'src/main/play/listings/ta/'
+}
+
+task postBuildScript(type: Exec) {
+    executable = 'python'
+    args = ['-u', './postbuild.py']
+}
