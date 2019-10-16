@@ -48,11 +48,15 @@ public class Options {
     public int maxConcurrentScans = 1;
 
     // Since v1.2.0
-    public String crashReportingURL = "https://crash.syncthing.net/newcrash";
+    // json: crURL, xml: crashReportingURL
+    public String crURL = "https://crash.syncthing.net/newcrash";
     public boolean crashReportingEnabled = true;
     public int stunKeepaliveStartS = 180;
     public int stunKeepaliveMinS = 20;
     public String stunServer = "default";
+
+    // Since v1.3.0
+    public String databaseTuning = "small";         // SyncthingNative defaults to "auto".
 
     // Items that may be temporarily missing because they are empty.
     /**
