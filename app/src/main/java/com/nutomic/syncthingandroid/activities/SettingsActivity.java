@@ -640,6 +640,12 @@ public class SettingsActivity extends SyncthingActivity {
                     mSuggestNewFolderRoot.setValue(o.toString());
                     preference.setSummary(mSuggestNewFolderRoot.getEntry());
                     break;
+                case Constants.PREF_LAUNCHER_SHOW_CAMERA_ICON:
+                    if (!showHideLauncherCameraIcon((Boolean) o)) {
+                        Toast.makeText(getActivity(), R.string.toast_show_hide_launcher_icon_failed, Toast.LENGTH_LONG)
+                                .show();
+                    }
+                    break;
             }
             return true;
         }
@@ -1015,7 +1021,7 @@ public class SettingsActivity extends SyncthingActivity {
             protected void onPostExecute(Void aVoid) {
                 // Get a reference to the activity if it is still there.
                 SettingsActivity settingsActivity = refSettingsActivity.get();
-                if (settingsActivity == null) {
+                if (settingsActivity == null || settingsActivity.isFinishing()) {
                     return;
                 }
                 if (!actionSucceeded) {
@@ -1070,13 +1076,18 @@ public class SettingsActivity extends SyncthingActivity {
          * Calley by {@link SyncthingService#importConfig} after config import.
          */
         private void afterConfigImport(Boolean actionSucceeded) {
+            SyncthingActivity syncthingActivity = (SyncthingActivity) getActivity();
+            if (syncthingActivity == null || syncthingActivity.isFinishing()) {
+                return;
+            }
+
             if (!actionSucceeded) {
-                Toast.makeText(getActivity(),
+                Toast.makeText(syncthingActivity,
                     getString(R.string.config_import_failed,
                     Constants.EXPORT_PATH_OBJ), Toast.LENGTH_LONG).show();
                     return;
             }
-            Toast.makeText(getActivity(),
+            Toast.makeText(syncthingActivity,
                 getString(R.string.config_imported_successful), Toast.LENGTH_LONG).show();
 
             // We don't have to send the config via REST on leaving activity.
@@ -1084,7 +1095,7 @@ public class SettingsActivity extends SyncthingActivity {
 
             // We have to evaluate run conditions, they may have changed by the imported prefs.
             mPendingRunConditions = true;
-            getActivity().finish();
+            syncthingActivity.finish();
         }
 
         /**
@@ -1146,7 +1157,7 @@ public class SettingsActivity extends SyncthingActivity {
          */
         private String getOpenFileLimit() {
             String shellCommand = "ulimit -n";
-            if (Build.VERSION.SDK_INT < 29) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                 shellCommand = "/system/bin/" + shellCommand;
             }
             String result = Util.runShellCommandGetOutput(shellCommand, false);
@@ -1154,6 +1165,26 @@ public class SettingsActivity extends SyncthingActivity {
                 return "N/A";
             }
             return result;
+        }
+
+        /**
+         * Returns if the operation succeeded.
+         */
+        private Boolean showHideLauncherCameraIcon(Boolean showIcon) {
+            try {
+                SyncthingActivity syncthingActivity = (SyncthingActivity) getActivity();
+                PackageManager packageManager = syncthingActivity.getPackageManager();
+                ComponentName componentName = new ComponentName(syncthingActivity, com.nutomic.syncthingandroid.activities.PhotoShootActivity.class);
+                packageManager.setComponentEnabledSetting(
+                        componentName,
+                        showIcon ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP
+                );
+                return true;
+            } catch (Exception e) {
+                Log.e(TAG, "showHideLauncherCameraIcon", e);
+                return false;
+            }
         }
     }
 }

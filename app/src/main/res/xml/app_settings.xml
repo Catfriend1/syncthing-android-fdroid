@@ -133,6 +133,7 @@
             android:summary="@string/use_root_summary"
             android:defaultValue="false" />
 
+        <!-- Folder root suggestion -->
         <ListPreference
             android:key="suggest_new_folder_root"
             android:title="@string/suggest_new_folder_root_title"
@@ -140,6 +141,13 @@
             android:entries="@array/suggest_new_folder_root_entries"
             android:summary="@null"
             android:defaultValue="external_android_data" />
+
+        <!-- Show "Syncthing Camera" icon in launcher -->
+        <CheckBoxPreference
+            android:key="launcher_show_camera_icon"
+            android:title="@string/launcher_show_camera_icon_title"
+            android:summary="@string/launcher_show_camera_icon_summary"
+            android:defaultValue="true" />
 
     </PreferenceScreen>
 
