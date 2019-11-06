@@ -35,8 +35,14 @@ IF NOT EXIST "%SYNCTHING_RELEASE_PLAY_ACCOUNT_CONFIG_FILE%" echo [ERROR] SYNCTHI
 REM 
 REM User has to enter the signing password if it is not filled in here.
 SET SIGNING_PASSWORD=
+IF DEFINED SIGNING_PASSWORD goto :absLint
 :enterSigningPassword
-IF NOT DEFINED SIGNING_PASSWORD SET /p SIGNING_PASSWORD=Enter signing password:
+setlocal DisableDelayedExpansion
+set "psCommand=powershell -Command "$pword = read-host 'Enter signing password' -AsSecureString ; ^
+	$BSTR=[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pword); ^
+		[System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)""
+for /f "usebackq delims=" %%p in (`%psCommand%`) do SET SIGNING_PASSWORD=%%p
+setlocal EnableDelayedExpansion
 IF NOT DEFINED SIGNING_PASSWORD echo [ERROR] Signing password is required. Please retry. & goto :enterSigningPassword
 REM 
 :absLint
@@ -63,6 +69,12 @@ SET RESULT=%ERRORLEVEL%
 IF NOT "%RESULT%" == "0" echo [ERROR] "gradlew assembleRelease" exited with code #%RESULT%. & goto :eos
 type "app\build\intermediates\merged_manifests\release\AndroidManifest.xml" | findstr /i "android:version"
 REM 
+IF "%CLEANUP_BEFORE_BUILD%" == "1" del /f "%SCRIPT_PATH%app\build\outputs\bundle\release\app-release.aab" 2> NUL:
+echo [INFO] Building Android BUNDLE variant "release" ...
+call gradlew --quiet bundleRelease
+SET RESULT=%ERRORLEVEL%
+IF NOT "%RESULT%" == "0" echo [ERROR] "gradlew bundleRelease" exited with code #%RESULT%. & goto :eos
+REM 
 :absPostBuildScript
 REM 
 echo [INFO] Running OPTIONAL post build script ...
@@ -86,10 +98,6 @@ REM Workaround for play-publisher issue, see https://github.com/Triple-T/gradle-
 IF EXIST "app\build\generated\gpp" rd /s /q "app\build\generated\gpp"
 IF EXIST "app\build\generated\gpp" TASKKILL /F /IM java.exe & sleep 1 & goto :clearPlayPublisherCache
 REM 
-REM Remove "app\src\main\play\listings\[lang]\graphics\icon" folders because of GPlay API Error #500.
-REM rd /s /q "app\src\main\play\listings\de-DE\graphics\icon"
-REM rd /s /q "app\src\main\play\listings\en-GB\graphics\icon"
-REM 
 REM Publish text and image resources to GPlay
 echo [INFO] Publishing descriptive resources to GPlay ...
 call gradlew --quiet publishReleaseListing
@@ -98,13 +106,12 @@ IF NOT "%RESULT%" == "0" echo [ERROR] "gradlew publishReleaseListing" exited wit
 REM 
 REM Publish APK to GPlay
 echo [INFO] Publishing APK to GPlay ...
-call gradlew --quiet publishRelease
+REM call gradlew --quiet publishRelease
+REM SET RESULT=%ERRORLEVEL%
+REM IF NOT "%RESULT%" == "0" echo [ERROR] "gradlew publishRelease" exited with code #%RESULT%. & goto :eos
+call gradlew --quiet publishBundle
 SET RESULT=%ERRORLEVEL%
-IF NOT "%RESULT%" == "0" echo [ERROR] "gradlew publishRelease" exited with code #%RESULT%. & goto :eos
-REM 
-REM Revert removed play icon resources.
-REM git checkout -- "app\src\main\play\listings\de-DE\graphics\icon\*"
-REM git checkout -- "app\src\main\play\listings\en-GB\graphics\icon\*"
+IF NOT "%RESULT%" == "0" echo [ERROR] "gradlew publishBundle" exited with code #%RESULT%. & goto :eos
 REM 
 goto :eos
 :eos
