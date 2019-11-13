@@ -15,21 +15,22 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.annimon.stream.Stream;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import com.nutomic.syncthingandroid.R;
 import com.nutomic.syncthingandroid.SyncthingApp;
-import com.nutomic.syncthingandroid.activities.DeviceActivity;
-import com.nutomic.syncthingandroid.activities.FolderActivity;
 import com.nutomic.syncthingandroid.model.CompletionInfo;
 import com.nutomic.syncthingandroid.model.Device;
 import com.nutomic.syncthingandroid.model.Event;
 import com.nutomic.syncthingandroid.model.Folder;
+import com.nutomic.syncthingandroid.model.FolderStatus;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -48,7 +49,7 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
      * Minimum interval in seconds at which the events are polled from syncthing and processed.
      * This interval will not wake up the device to save battery power.
      */
-    private static final long EVENT_UPDATE_INTERVAL = TimeUnit.SECONDS.toMillis(15);
+    private static final long EVENT_UPDATE_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     /**
      * Use the MainThread for all callbacks and message handling
@@ -109,29 +110,57 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
                 }
                 break;
             case "DeviceRejected":
+                /**
+                 * This is obsolete since v0.14.51, https://github.com/syncthing/syncthing/pull/5084
+                 * Unknown devices are now stored to "config.xml" and persisted until the user decided
+                 * to accept or ignore the device connection request. We don't need to catch the event
+                 * as a "ConfigSaved" event is fired which will be forwarded to:
+                 * {@link RestApi#reloadConfig} => {@link RestApi#onReloadConfigComplete}
+                 */
+                /*
                 onDeviceRejected(
                     (String) event.data.get("device"),          // deviceId
                     (String) event.data.get("name")             // deviceName
                 );
+                */
                 break;
             case "FolderCompletion":
-                CompletionInfo completionInfo = new CompletionInfo();
-                completionInfo.completion = (Double) event.data.get("completion");
-                mRestApi.setCompletionInfo(
-                    (String) event.data.get("device"),          // deviceId
-                    (String) event.data.get("folder"),          // folderId
-                    completionInfo
-                );
+                onFolderCompletion(event.data);
                 break;
             case "FolderErrors":
                 LogV("Event " + event.type + ", data " + event.data);
                 onFolderErrors(json);
                 break;
+            case "FolderPaused":
+                onFolderPaused(
+                        (String) event.data.get("id")              // folderId
+                );
+                break;
             case "FolderRejected":
+                /**
+                 * This is obsolete since v0.14.51, https://github.com/syncthing/syncthing/pull/5084
+                 * Unknown folders are now stored to "config.xml" and persisted until the user decided
+                 * to accept or ignore the folder share request. We don't need to catch the event
+                 * as a "ConfigSaved" event is fired which will be forwarded to:
+                 * {@link RestApi#reloadConfig} => {@link RestApi#onReloadConfigComplete}
+                 */
+                /*
                 onFolderRejected(
                     (String) event.data.get("device"),          // deviceId
                     (String) event.data.get("folder"),          // folderId
                     (String) event.data.get("folderLabel")      // folderLabel
+                );
+                */
+                break;
+            case "FolderResumed":
+                onFolderResumed(
+                        (String) event.data.get("id")              // folderId
+                );
+                break;
+            case "FolderSummary":
+                onFolderSummary(
+                        json,
+                        (String) event.data.get("folder")          // folderId
                 );
                 break;
             case "ItemFinished":
@@ -161,14 +190,17 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
             case "Ping":
                 // Ignored.
                 break;
+            case "StateChanged":
+                onStateChanged(
+                        (String) event.data.get("folder"),         // folderId
+                        (String) event.data.get("to")
+                );
+                break;
             case "DeviceConnected":
             case "DeviceDisconnected":
             case "DeviceDiscovered":
             case "DownloadProgress":
-            case "FolderPaused":
-            case "FolderResumed":
             case "FolderScanProgress":
-            case "FolderSummary":
             case "FolderWatchStateChanged":
             case "ItemStarted":
             case "ListenAddressesChanged":
@@ -178,7 +210,6 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
             case "RemoteIndexUpdated":
             case "Starting":
             case "StartupComplete":
-            case "StateChanged":
                 LogV("Ignored event " + event.type + ", data " + event.data);
                 break;
             default:
@@ -223,83 +254,17 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
         }
     }
 
-    private void onDeviceRejected(String deviceId, String deviceName) {
-        if (deviceId == null) {
-            return;
-        }
-        Log.d(TAG, "Unknown device " + deviceName + "(" + deviceId + ") wants to connect");
-
-        String title = mContext.getString(R.string.device_rejected,
-                deviceName.isEmpty() ? deviceId.substring(0, 7) : deviceName);
-        int notificationId = mNotificationHandler.getNotificationIdFromText(title);
-
-        // Prepare "accept" action.
-        Intent intentAccept = new Intent(mContext, DeviceActivity.class)
-                .putExtra(DeviceActivity.EXTRA_NOTIFICATION_ID, notificationId)
-                .putExtra(DeviceActivity.EXTRA_IS_CREATE, true)
-                .putExtra(DeviceActivity.EXTRA_DEVICE_ID, deviceId)
-                .putExtra(DeviceActivity.EXTRA_DEVICE_NAME, deviceName);
-        PendingIntent piAccept = PendingIntent.getActivity(mContext, notificationId,
-            intentAccept, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        // Prepare "ignore" action.
-        Intent intentIgnore = new Intent(mContext, SyncthingService.class)
-                .putExtra(SyncthingService.EXTRA_NOTIFICATION_ID, notificationId)
-                .putExtra(SyncthingService.EXTRA_DEVICE_ID, deviceId);
-        intentIgnore.setAction(SyncthingService.ACTION_IGNORE_DEVICE);
-        PendingIntent piIgnore = PendingIntent.getService(mContext, 0,
-            intentIgnore, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        // Show notification.
-        mNotificationHandler.showConsentNotification(notificationId, title, piAccept, piIgnore);
+    private void onFolderCompletion(final Map<String, Object> eventData) {
+        CompletionInfo completionInfo = new CompletionInfo();
+        completionInfo.completion = (Double) eventData.get("completion");
+        mRestApi.setRemoteCompletionInfo(
+            (String) eventData.get("device"),          // deviceId
+            (String) eventData.get("folder"),          // folderId
+            completionInfo
+        );
     }
 
-    private void onFolderRejected(String deviceId, String folderId,
-                                    String folderLabel) {
-        if (deviceId == null || folderId == null) {
-            return;
-        }
-        Log.d(TAG, "Device " + deviceId + " wants to share folder " +
-            folderLabel + " (" + folderId + ")");
-
-        // Find the deviceName corresponding to the deviceId
-        String deviceName = null;
-        for (Device d : mRestApi.getDevices(false)) {
-            if (d.deviceID.equals(deviceId)) {
-                deviceName = d.getDisplayName();
-                break;
-            }
-        }
-        String title = mContext.getString(R.string.folder_rejected, deviceName,
-                folderLabel.isEmpty() ? folderId : folderLabel + " (" + folderId + ")");
-        int notificationId = mNotificationHandler.getNotificationIdFromText(title);
-
-        // Prepare "accept" action.
-        boolean isNewFolder = Stream.of(mRestApi.getFolders())
-                .noneMatch(f -> f.id.equals(folderId));
-        Intent intentAccept = new Intent(mContext, FolderActivity.class)
-                .putExtra(FolderActivity.EXTRA_NOTIFICATION_ID, notificationId)
-                .putExtra(FolderActivity.EXTRA_IS_CREATE, isNewFolder)
-                .putExtra(FolderActivity.EXTRA_DEVICE_ID, deviceId)
-                .putExtra(FolderActivity.EXTRA_FOLDER_ID, folderId)
-                .putExtra(FolderActivity.EXTRA_FOLDER_LABEL, folderLabel);
-        PendingIntent piAccept = PendingIntent.getActivity(mContext, notificationId,
-            intentAccept, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        // Prepare "ignore" action.
-        Intent intentIgnore = new Intent(mContext, SyncthingService.class)
-                .putExtra(SyncthingService.EXTRA_NOTIFICATION_ID, notificationId)
-                .putExtra(SyncthingService.EXTRA_DEVICE_ID, deviceId)
-                .putExtra(SyncthingService.EXTRA_FOLDER_ID, folderId);
-        intentIgnore.setAction(SyncthingService.ACTION_IGNORE_FOLDER);
-        PendingIntent piIgnore = PendingIntent.getService(mContext, 0,
-            intentIgnore, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        // Show notification.
-        mNotificationHandler.showConsentNotification(notificationId, title, piAccept, piIgnore);
-    }
-
-    private void onFolderErrors(JsonElement json) {
+    private void onFolderErrors(final JsonElement json) {
         JsonElement data = ((JsonObject) json).get("data");
         if (data == null) {
             Log.e(TAG, "onFolderErrors: data == null");
@@ -328,6 +293,37 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
             }
         }
     }
+
+    private void onFolderPaused(final String folderId) {
+        mRestApi.updateLocalFolderPause(folderId, true);
+    }
+
+    private void onFolderResumed(final String folderId) {
+        mRestApi.updateLocalFolderPause(folderId, false);
+    }
+
+    private void onFolderSummary(final JsonElement json, final String folderId) {
+        JsonElement data = ((JsonObject) json).get("data");
+        if (data == null) {
+            Log.e(TAG, "onFolderSummary: data == null");
+            return;
+        }
+        JsonElement summary = ((JsonObject) data).get("summary");
+        if (summary == null) {
+            Log.e(TAG, "onFolderSummary: summary == null");
+            return;
+        }
+        FolderStatus folderStatus = new FolderStatus();
+        try {
+            folderStatus = new GsonBuilder().create()
+                    .fromJson(summary, FolderStatus.class);
+        } catch (Exception e) {
+            Log.e(TAG, "onFolderSummary: gson.fromJson failed", e);
+            return;
+        }
+        mRestApi.setLocalFolderStatus(folderId, folderStatus);
+    }
+
 
     /**
      * Precondition: action != null
@@ -370,6 +366,13 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
             default:
                 Log.w(TAG, "onItemFinished: Unhandled action \"" + action + "\"");
         }
+    }
+
+    /**
+     * Emitted when a folder changes state.
+     */
+    private void onStateChanged(final String folderId, final String newState) {
+        mRestApi.updateLocalFolderState(folderId, newState);
     }
 
     private static class LoggingAsyncQueryHandler extends AsyncQueryHandler {

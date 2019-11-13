@@ -1,8 +1,11 @@
 * Syncthing v1.3.1
 * PLEASE NOTE: Android 10's Scoped Storage can or will render this app unusable in the future. This cannot be solved by devs, check wiki.
 * See detailed changelog on GitHub.
+
 Fixed
-* photoShoot on Huawei Android 7 devices (#542)
-* Crash after taking picture on pre-nougat cyanogen OS (#534)
+* Folder tab not showing failed items (#547)
+
 Enhanced
-* Show "Local Additions" status for receiveOnly folders
+* Show progress bars on folder and device tab (#548)
+* Reduce expensive API calls by caching to save battery (#546)
+* Improved device/folder approval notifications to fire faster and on app start (#471)

@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 import android.util.Log;
 
+import com.annimon.stream.Stream;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
@@ -22,7 +23,6 @@ import com.nutomic.syncthingandroid.activities.ShareActivity;
 import com.nutomic.syncthingandroid.http.GetRequest;
 import com.nutomic.syncthingandroid.http.PostRequest;
 import com.nutomic.syncthingandroid.model.Config;
-import com.nutomic.syncthingandroid.model.Completion;
 import com.nutomic.syncthingandroid.model.CompletionInfo;
 import com.nutomic.syncthingandroid.model.Connections;
 import com.nutomic.syncthingandroid.model.Device;
@@ -34,9 +34,11 @@ import com.nutomic.syncthingandroid.model.FolderIgnoreList;
 import com.nutomic.syncthingandroid.model.FolderStatus;
 import com.nutomic.syncthingandroid.model.Gui;
 import com.nutomic.syncthingandroid.model.IgnoredFolder;
+import com.nutomic.syncthingandroid.model.LocalCompletion;
 import com.nutomic.syncthingandroid.model.Options;
 import com.nutomic.syncthingandroid.model.PendingDevice;
 import com.nutomic.syncthingandroid.model.PendingFolder;
+import com.nutomic.syncthingandroid.model.RemoteCompletion;
 import com.nutomic.syncthingandroid.model.RemoteIgnoredDevice;
 import com.nutomic.syncthingandroid.model.SystemStatus;
 import com.nutomic.syncthingandroid.model.SystemVersion;
@@ -87,10 +89,6 @@ public class RestApi {
         void onResult(T t);
     }
 
-    public interface OnResultListener2<T, R> {
-        void onResult(T t, R r);
-    }
-
     private final Context mContext;
     private final URL mUrl;
     private final String mApiKey;
@@ -139,16 +137,14 @@ public class RestApi {
     private final Object mConfigLock = new Object();
 
     /**
-     * Stores the latest result of {@link #getFolderStatus} for each folder
-     */
-    private HashMap<String, FolderStatus> mCachedFolderStatuses = new HashMap<>();
-
-    /**
      * Stores the latest result of device and folder completion events.
      */
-    private Completion mCompletion;
+    private LocalCompletion mLocalCompletion;
+    private RemoteCompletion mRemoteCompletion;
 
     private Gson mGson;
+
+    @Inject NotificationHandler mNotificationHandler;
 
     public RestApi(Context context, URL url, String apiKey, OnApiAvailableListener apiListener,
                    OnConfigChangedListener configListener) {
@@ -159,7 +155,8 @@ public class RestApi {
         mApiKey = apiKey;
         mOnApiAvailableListener = apiListener;
         mOnConfigChangedListener = configListener;
-        mCompletion = new Completion(ENABLE_VERBOSE_LOG);
+        mLocalCompletion = new LocalCompletion(ENABLE_VERBOSE_LOG);
+        mRemoteCompletion = new RemoteCompletion(ENABLE_VERBOSE_LOG);
         mGson = getGson();
     }
 
@@ -229,11 +226,61 @@ public class RestApi {
             throw new RuntimeException("config is null: " + result);
         }
         Log.d(TAG, "onReloadConfigComplete: Successfully parsed configuration.");
-        LogV("mConfig.pendingDevices = " + mGson.toJson(mConfig.pendingDevices));
-        LogV("mConfig.remoteIgnoredDevices = " + mGson.toJson(mConfig.remoteIgnoredDevices));
 
-        // Update cached device and folder information stored in the mCompletion model.
-        mCompletion.updateFromConfig(getDevices(true), getFolders());
+        synchronized (mConfigLock) {
+            String logRemoteIgnoredDevices = mGson.toJson(mConfig.remoteIgnoredDevices);
+            if (!logRemoteIgnoredDevices.equals("[]")) {
+                LogV("ORCC: remoteIgnoredDevices = " + logRemoteIgnoredDevices);
+            }
+
+            // Check if device approval notifications are pending.
+            String logPendingDevices = mGson.toJson(mConfig.pendingDevices);
+            if (!logPendingDevices.equals("[]")) {
+                LogV("ORCC: pendingDevices = " + logPendingDevices);
+            }
+            for (final PendingDevice pendingDevice : mConfig.pendingDevices) {
+                if (mNotificationHandler != null && pendingDevice.deviceID != null) {
+                    Log.d(TAG, "ORCC: pendingDevice.deviceID = " + pendingDevice.deviceID + "('" + pendingDevice.name + "')");
+                    mNotificationHandler.showDeviceConnectNotification(
+                        pendingDevice.deviceID,
+                        pendingDevice.name
+                    );
+                }
+            }
+
+            // Loop through devices.
+            for (final Device device : getDevices(false)) {
+                String logIgnoredFolders = mGson.toJson(device.ignoredFolders);
+                if (!logIgnoredFolders.equals("[]")) {
+                    LogV("ORCC: device[" + device.getDisplayName() + "].ignoredFolders = " + logIgnoredFolders);
+                }
+
+                // Check if folder approval notifications are pending for the device.
+                String logPendingFolders = mGson.toJson(device.pendingFolders);
+                if (!logPendingFolders.equals("[]")) {
+                    LogV("ORCC: device[" + device.getDisplayName() + "].pendingFolders = " + logPendingFolders);
+                }
+                for (final PendingFolder pendingFolder : device.pendingFolders) {
+                    if (mNotificationHandler != null && pendingFolder.id != null) {
+                        Log.d(TAG, "ORCC: pendingFolder.id = " + pendingFolder.id + "('" + pendingFolder.label + "')");
+                        Boolean isNewFolder = Stream.of(getFolders())
+                                .noneMatch(f -> f.id.equals(pendingFolder.id));
+                        mNotificationHandler.showFolderShareNotification(
+                            device.deviceID,
+                            device.name,
+                            pendingFolder.id,
+                            pendingFolder.label,
+                            isNewFolder
+                        );
+                    }
+                }
+            }
+        }
+
+        // Update cached device and folder information.
+        final List<Folder> tmpFolders = getFolders();
+        mLocalCompletion.updateFromConfig(tmpFolders);
+        mRemoteCompletion.updateFromConfig(getDevices(true), tmpFolders);
     }
 
     /**
@@ -324,7 +371,7 @@ public class RestApi {
                     for (IgnoredFolder ignoredFolder : device.ignoredFolders) {
                         if (folderId.equals(ignoredFolder.id)) {
                             // Folder already ignored.
-                            Log.d(TAG, "Folder [" + folderId + "] already ignored on device [" + deviceId + "]");
+                            Log.d(TAG, "ignoreFolder: Folder [" + folderId + "] already ignored on device [" + deviceId + "]");
                             return;
                         }
                     }
@@ -347,8 +394,8 @@ public class RestApi {
                         }
                     }
                     device.ignoredFolders.add(ignoredFolder);
-                    LogV("device.pendingFolders = " + mGson.toJson(device.pendingFolders));
-                    LogV("device.ignoredFolders = " + mGson.toJson(device.ignoredFolders));
+                    LogV("ignoreFolder: device.pendingFolders = " + mGson.toJson(device.pendingFolders));
+                    LogV("ignoreFolder: device.ignoredFolders = " + mGson.toJson(device.ignoredFolders));
                     sendConfig();
                     Log.d(TAG, "Ignored folder [" + folderId + "] announced by device [" + deviceId + "]");
 
@@ -492,7 +539,8 @@ public class RestApi {
     public void removeFolder(String id) {
         synchronized (mConfigLock) {
             removeFolderInternal(id);
-            // mCompletion will be updated after the ConfigSaved event.
+            // mLocalCompletion will be updated after the ConfigSaved event.
+            // mRemoteCompletion will be updated after the ConfigSaved event.
             sendConfig();
             // Remove saved data from share activity for this folder.
         }
@@ -569,7 +617,7 @@ public class RestApi {
     public void removeDevice(String deviceId) {
         synchronized (mConfigLock) {
             removeDeviceInternal(deviceId);
-            // mCompletion will be updated after the ConfigSaved event.
+            // mRemoteCompletion will be updated after the ConfigSaved event.
             sendConfig();
         }
     }
@@ -707,7 +755,7 @@ public class RestApi {
             mPreviousConnectionTime = now;
             Connections connections = mGson.fromJson(result, Connections.class);
             for (Map.Entry<String, Connections.Connection> e : connections.connections.entrySet()) {
-                e.getValue().completion = mCompletion.getDeviceCompletion(e.getKey());
+                e.getValue().completion = mRemoteCompletion.getDeviceCompletion(e.getKey());
 
                 Connections.Connection prev =
                         (mPreviousConnections.isPresent() && mPreviousConnections.get().connections.containsKey(e.getKey()))
@@ -720,18 +768,6 @@ public class RestApi {
             connections.total.setTransferRate(prev, msElapsed);
             mPreviousConnections = Optional.of(connections);
             listener.onResult(deepCopy(connections, Connections.class));
-        });
-    }
-
-    /**
-     * Returns status information about the folder with the given id.
-     */
-    public void getFolderStatus(final String folderId, final OnResultListener2<String, FolderStatus> listener) {
-        new GetRequest(mContext, mUrl, GetRequest.URI_DB_STATUS, mApiKey,
-                    ImmutableMap.of("folder", folderId), result -> {
-            FolderStatus m = mGson.fromJson(result, FolderStatus.class);
-            mCachedFolderStatuses.put(folderId, m);
-            listener.onResult(folderId, m);
         });
     }
 
@@ -803,12 +839,46 @@ public class RestApi {
     }
 
     /**
+     * Returns status information about the folder with the given id from cache.
+     */
+    public final Map.Entry<FolderStatus, CompletionInfo> getFolderStatus (
+            final String folderId) {
+        final Map.Entry<FolderStatus, CompletionInfo> cacheEntry = mLocalCompletion.getFolderStatus(folderId);
+        if (cacheEntry.getKey().stateChanged.isEmpty()) {
+            /**
+             * Cache miss because we haven't received a "FolderSummary" event yet.
+             * Query for the required information so it will be available on a future call to this function.
+             */
+            LogV("getFolderStatus: Cache miss, folderId=\"" + folderId + "\". Performing query.");
+            new GetRequest(mContext, mUrl, GetRequest.URI_DB_STATUS, mApiKey,
+                    ImmutableMap.of("folder", folderId), result -> {
+                final Folder folder = getFolderByID(folderId);
+                if (folder == null) {
+                    Log.e(TAG, "getFolderStatus#GetRequest#onResult: folderId == null");
+                    return;
+                }
+                mLocalCompletion.setFolderStatus(
+                        folderId,
+                        folder.paused,
+                        mGson.fromJson(result, FolderStatus.class)
+                );
+            });
+        }
+        return cacheEntry;
+    }
+
+    /**
      * Updates cached folder and device completion info according to event data.
      */
-    public void setCompletionInfo(String deviceId, String folderId, CompletionInfo completionInfo) {
+    public void setLocalFolderStatus(final String folderId,
+                                            final FolderStatus folderStatus) {
+        mLocalCompletion.setFolderStatus(folderId, folderStatus);
+    }
+
+    public void setRemoteCompletionInfo(String deviceId, String folderId, CompletionInfo completionInfo) {
         final Folder folder = getFolderByID(folderId);
         if (folder == null) {
-            Log.e(TAG, "setCompletionInfo: folderId == null");
+            Log.e(TAG, "setRemoteCompletionInfo: folderId == null");
             return;
         }
         if (folder.paused) {
@@ -819,10 +889,21 @@ public class RestApi {
              * to be 0% complete. To get consistent UI output, we assume 100% completion for paused
              * folders.
             **/
-            LogV("setCompletionInfo: Paused folder \"" + folderId + "\" - got " + completionInfo.completion + "%, passing on 100%");
+            LogV("setRemoteCompletionInfo: Paused folder \"" + folderId + "\" - got " + completionInfo.completion + "%, passing on 100%");
             completionInfo.completion = 100;
         }
-        mCompletion.setCompletionInfo(deviceId, folderId, completionInfo);
+        mRemoteCompletion.setCompletionInfo(deviceId, folderId, completionInfo);
+    }
+
+    public void updateLocalFolderPause(final String folderId, final Boolean newPaused) {
+        // Clear status cache when pausing or resuming the folder.
+        mLocalCompletion.setFolderStatus(folderId, newPaused, new FolderStatus());
+    }
+
+    public void updateLocalFolderState(final String folderId, final String newState) {
+        final Map.Entry<FolderStatus, CompletionInfo> cacheEntry = mLocalCompletion.getFolderStatus(folderId);
+        cacheEntry.getKey().state = newState;
+        mLocalCompletion.setFolderStatus(folderId, cacheEntry.getKey());
     }
 
     /**
