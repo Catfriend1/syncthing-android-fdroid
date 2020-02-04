@@ -3,7 +3,7 @@
 [![License: MPLv2](https://img.shields.io/badge/License-MPLv2-blue.svg)](https://opensource.org/licenses/MPL-2.0)
 <a href="https://github.com/Catfriend1/syncthing-android/releases" alt="GitHub release"><img src="https://img.shields.io/github/release/Catfriend1/syncthing-android/all.svg" /></a>
 <a href="https://f-droid.org/packages/com.github.catfriend1.syncthingandroid" alt="F-Droid release"><img src="https://img.shields.io/f-droid/v/com.github.catfriend1.syncthingandroid.svg" /></a>
-<a href="https://play.google.com/store/apps/details?id=com.github.catfriend1.syncthingandroid" alt="G-Play release"><img src="https://img.shields.io/badge/g--play-1.3.3.4-blue.svg" /></a>
+<a href="https://play.google.com/store/apps/details?id=com.github.catfriend1.syncthingandroid" alt="G-Play release"><img src="https://img.shields.io/badge/g--play-1.3.4.0-blue.svg" /></a>
 <a href="https://liberapay.com/~1534877" alt="LiberaPay"><img src="https://img.shields.io/liberapay/patrons/Syncthing-Fork.svg?style=social" /></a>
 <a href="https://www.somsubhra.com/github-release-stats/?username=Catfriend1&repository=syncthing-android" alt="GitHub Stats"><img src="https://img.shields.io/github/downloads/Catfriend1/syncthing-android/total.svg" /></a>
 <a href="https://www.youtube.com/watch?v=rYHQzqSjKWQ" alt="Tutorial: Youtube-Video"><img src="https://img.shields.io/badge/Tutorial-Youtube--Video-blueviolet" /></a>
@@ -39,24 +39,26 @@ The project is translated on [Transifex](https://www.transifex.com/projects/p/sy
 
 # Building
 
-### Prerequisites
+## Prerequisites
 - Android SDK
 `You can skip this if you are using Android Studio.`
-- Android NDK r16b
+- Android NDK r20b
 `$ANDROID_NDK_HOME environment variable should point at the root directory of your NDK. If the variable is not set, build-syncthing.py will automatically try to download and setup the NDK.`
-- Go 1.9.7
+- Go 1.13.5
 `Make sure, Go is installed and available on the PATH environment variable. If Go is not found on the PATH environment variable, build-syncthing.py will automatically try to download and setup GO on the PATH.`
-- Python 2.7
+- Python 3.6.5
 `Make sure, Python is installed and available on the PATH environment variable.`
 - Git (for Linux) or Git for Windows
 `Make sure, git (or git.exe) is installed and available on the PATH environment variable. If Git is not found on the PATH environment variable, build-syncthing.py will automatically try to download and setup MinGit 2.19.0-x64 on the PATH.`
 - Java Version 8 (you might need to set `$JAVA_HOME` accordingly)
 
-### Build instructions
+## Build instructions
 
 Make sure you clone the project with
 `git clone https://github.com/Catfriend1/syncthing-android.git --recursive`.
 Alternatively, run `git submodule init && git submodule update` in the project folder.
+
+### Build on Linux
 
 A Linux VM, for example running Debian, is recommended to build this.
 
@@ -74,7 +76,23 @@ To clean up all files generated during build, use the following commands:
 
 `./gradlew clean`
 
-### Development Notes
+### Build on Windows
+
+`cd /d "YOUR_CLONED_GIT_ROOT"`
+
+`python install_minimum_android_sdk_prerequisites.py`
+
+Edit "setenv.cmd" and adjust Android studio or Java path according to your needs.
+
+`setenv`
+
+`SyncthingNative_update_and_build`
+
+Edit "App_build_and_release.cmd" and set "SKIP_RELEASE_BUILD=1" if you don't need to upload signed releases to Google Play.
+
+`App_build_and_release`
+
+# Development Notes
 
 It is recommended to change the GUI and Listen Address ports for the debug app, e.g. to 8385 and 22001 respectively.
 
