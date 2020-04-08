@@ -17,9 +17,9 @@ SUPPORTED_PYTHON_PLATFORMS = ['Windows', 'Linux', 'Darwin']
 FORCE_DISPLAY_SYNCTHING_VERSION = ''
 FILENAME_SYNCTHING_BINARY = 'libsyncthingnative.so'
 
-GO_VERSION = '1.13.5'
-GO_EXPECTED_SHASUM_LINUX = '512103d7ad296467814a6e3f635631bd35574cab3369a97a323c9a585ccaa569'
-GO_EXPECTED_SHASUM_WINDOWS = '027275e04d795fbadc898ba7a50ed0ab2161ff4c5e613c94dbb066b2ca24ec11'
+GO_VERSION = '1.13.9'
+GO_EXPECTED_SHASUM_LINUX = 'f4ad8180dd0aaf7d7cda7e2b0a2bf27e84131320896d376549a7d849ecf237d7'
+GO_EXPECTED_SHASUM_WINDOWS = 'cf066aabdf4d83c251aaace14b57a35aafffd1fa67d54d907f27fb31e470a135'
 
 NDK_VERSION = 'r19c'
 NDK_EXPECTED_SHASUM_LINUX = 'fd94d0be6017c6acbd193eb95e09cf4b6f61b834'
@@ -165,11 +165,11 @@ def install_go():
     if sys.platform == 'win32':
         url =               'https://dl.google.com/go/go' + GO_VERSION + '.windows-amd64.zip'
         expected_shasum =   GO_EXPECTED_SHASUM_WINDOWS
-        tar_gz_fullfn = prerequisite_tools_dir + os.path.sep + 'go.zip';
+        tar_gz_fullfn = prerequisite_tools_dir + os.path.sep + 'go_' + GO_VERSION + '.zip';
     else:
         url =               'https://dl.google.com/go/go' + GO_VERSION + '.linux-amd64.tar.gz'
         expected_shasum =   GO_EXPECTED_SHASUM_LINUX
-        tar_gz_fullfn = prerequisite_tools_dir + os.path.sep + 'go.tgz';
+        tar_gz_fullfn = prerequisite_tools_dir + os.path.sep + 'go_' + GO_VERSION + '.tgz';
 
     # Download prebuilt-go.
     url_base_name = os.path.basename(url)
@@ -188,10 +188,10 @@ def install_go():
     print("[ok] Checksum of", tar_gz_fullfn, "matches expected value.")
 
     # Proceed with extraction of the prebuilt go.
-    if not os.path.isfile(prerequisite_tools_dir + os.path.sep + 'go' + os.path.sep + 'LICENSE'):
+    go_extracted_folder = prerequisite_tools_dir + os.path.sep + 'go_' + GO_VERSION
+    if not os.path.isfile(go_extracted_folder + os.path.sep + 'LICENSE'):
         print("Extracting prebuilt-go ...")
         # This will go to a subfolder "go" in the current path.
-        file_name, file_extension = os.path.splitext(url_base_name)
         if sys.platform == 'win32':
             zip = zipfile.ZipFile(tar_gz_fullfn, 'r')
             zip.extractall(prerequisite_tools_dir)
@@ -200,9 +200,10 @@ def install_go():
             tar = tarfile.open(tar_gz_fullfn)
             tar.extractall(prerequisite_tools_dir)
             tar.close()
+        os.rename(prerequisite_tools_dir + os.path.sep + 'go', go_extracted_folder)
 
     # Add "go/bin" to the PATH.
-    go_bin_path = prerequisite_tools_dir + os.path.sep + 'go' + os.path.sep + 'bin'
+    go_bin_path = go_extracted_folder + os.path.sep + 'bin'
     print('Adding to PATH:', go_bin_path)
     os.environ["PATH"] += os.pathsep + go_bin_path
 
@@ -230,7 +231,7 @@ def install_ndk():
         url =               'https://dl.google.com/android/repository/android-ndk-' + NDK_VERSION + '-linux-x86_64.zip'
         expected_shasum =   NDK_EXPECTED_SHASUM_LINUX
 
-    zip_fullfn = prerequisite_tools_dir + os.path.sep + 'ndk.zip';
+    zip_fullfn = prerequisite_tools_dir + os.path.sep + 'ndk_' + NDK_VERSION + '.zip';
     # Download NDK.
     url_base_name = os.path.basename(url)
     if not os.path.isfile(zip_fullfn):
@@ -251,8 +252,7 @@ def install_ndk():
     ndk_home_path = prerequisite_tools_dir + os.path.sep + 'android-ndk-' + NDK_VERSION
     if not os.path.isfile(ndk_home_path + os.path.sep + "sysroot" + os.path.sep + "NOTICE"):
         print("Extracting NDK ...")
-        # This will go to a subfolder "android-ndk-r18" in the current path.
-        file_name, file_extension = os.path.splitext(url_base_name)
+        # This will go to a subfolder "android-ndk-rXY" in the current path.
         zip = zipfile.ZipFile(zip_fullfn, 'r')
         zip.extractall(prerequisite_tools_dir)
         zip.close()
