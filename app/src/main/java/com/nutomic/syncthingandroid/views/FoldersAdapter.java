@@ -59,7 +59,7 @@ public class FoldersAdapter extends ArrayAdapter<Folder> {
 
         Folder folder = getItem(position);
         binding.label.setText(TextUtils.isEmpty(folder.label) ? folder.id : folder.label);
-        binding.directory.setText(folder.path);
+        binding.directory.setText(getShortPathForUI(folder.path));
         binding.override.setOnClickListener(view -> { onClickOverride(view, folder); } );
         binding.revert.setOnClickListener(view -> { onClickRevert(view, folder); } );
         binding.openFolder.setOnClickListener(view -> { FileUtils.openFolder(mContext, folder.path); } );
@@ -83,11 +83,12 @@ public class FoldersAdapter extends ArrayAdapter<Folder> {
 
     private void updateFolderStatusView(ItemFolderListBinding binding, Folder folder) {
         if  (mRestApi == null || !mRestApi.isConfigLoaded()) {
+            binding.lastItemFinishedItem.setVisibility(GONE);
+            binding.lastItemFinishedTime.setVisibility(GONE);
             binding.items.setVisibility(GONE);
             binding.override.setVisibility(GONE);
             binding.progressBar.setVisibility(GONE);
             binding.revert.setVisibility(GONE);
-            binding.size.setVisibility(GONE);
             binding.state.setVisibility(GONE);
             setTextOrHide(binding.invalid, folder.invalid);
             return;
@@ -97,8 +98,6 @@ public class FoldersAdapter extends ArrayAdapter<Folder> {
         final Map.Entry<FolderStatus, CachedFolderStatus> folderEntry = mRestApi.getFolderStatus(folder.id);
         final FolderStatus folderStatus = folderEntry.getKey();
         final CachedFolderStatus cachedFolderStatus = folderEntry.getValue();
-
-        binding.items.setVisibility(folder.paused ? GONE : VISIBLE);
 
         boolean failedItems = folderStatus.errors > 0;
 
@@ -112,7 +111,6 @@ public class FoldersAdapter extends ArrayAdapter<Folder> {
         boolean revertButtonVisible = folder.type.equals(Constants.FOLDER_TYPE_RECEIVE_ONLY) && (folderStatus.receiveOnlyTotalItems > 0);
         binding.revert.setVisibility(revertButtonVisible ? VISIBLE : GONE);
 
-        binding.size.setVisibility(folder.paused ? GONE : VISIBLE);
         binding.state.setVisibility(VISIBLE);
         if (outOfSync) {
             binding.state.setText(mContext.getString(R.string.status_outofsync));
@@ -123,7 +121,7 @@ public class FoldersAdapter extends ArrayAdapter<Folder> {
         } else {
             if (folder.paused) {
                 binding.state.setText(mContext.getString(R.string.state_paused));
-                binding.state.setTextColor(ContextCompat.getColor(mContext, R.color.text_black));
+                binding.state.setTextColor(ContextCompat.getColor(mContext, R.color.text_purple));
             } else {
                 switch(folderStatus.state) {
                     case "idle":
@@ -184,14 +182,51 @@ public class FoldersAdapter extends ArrayAdapter<Folder> {
             }
         }
 
-        binding.items.setText(mContext.getResources()
-                .getQuantityString(R.plurals.files, (int) folderStatus.inSyncFiles, folderStatus.inSyncFiles, folderStatus.globalFiles));
+        showLastItemFinishedUI(binding, cachedFolderStatus);
 
-        binding.size.setText(mContext.getString(R.string.folder_size_format,
+        binding.items.setVisibility(folder.paused ? GONE : VISIBLE);
+        String itemsAndSize = "\u2211 ";
+        itemsAndSize += mContext.getResources()
+                .getQuantityString(R.plurals.files, (int) folderStatus.inSyncFiles, folderStatus.inSyncFiles, folderStatus.globalFiles);
+        itemsAndSize += " \u2022 ";
+        itemsAndSize += mContext.getString(R.string.folder_size_format,
                 Util.readableFileSize(mContext, folderStatus.inSyncBytes),
-                Util.readableFileSize(mContext, folderStatus.globalBytes)));
+                Util.readableFileSize(mContext, folderStatus.globalBytes));
+        binding.items.setText(itemsAndSize);
 
         setTextOrHide(binding.invalid, folderStatus.invalid);
+    }
+
+    private void showLastItemFinishedUI(ItemFolderListBinding binding, final CachedFolderStatus cachedFolderStatus) {
+        if (TextUtils.isEmpty(cachedFolderStatus.lastItemFinishedAction) ||
+                TextUtils.isEmpty(cachedFolderStatus.lastItemFinishedItem) ||
+                TextUtils.isEmpty(cachedFolderStatus.lastItemFinishedTime)) {
+            binding.lastItemFinishedItem.setVisibility(GONE);
+            binding.lastItemFinishedTime.setVisibility(GONE);
+            return;
+        }
+        String finishedItemText = "\u21cc";
+        switch (cachedFolderStatus.lastItemFinishedAction) {
+            case "update":
+                finishedItemText += " \u229b";
+                break;
+            case "delete":
+                finishedItemText += " \u2297";
+                break;
+            default:
+                finishedItemText += " \u2049";
+        }
+        finishedItemText += " " + Util.getPathEllipsis(cachedFolderStatus.lastItemFinishedItem);
+
+        binding.lastItemFinishedItem.setText(finishedItemText);
+        binding.lastItemFinishedItem.setVisibility(VISIBLE);
+
+        String finishedItemTime = "\u21cc\u231a";
+        finishedItemTime += Util.formatTime(cachedFolderStatus.lastItemFinishedTime);
+        binding.lastItemFinishedTime.setText(finishedItemTime);
+        binding.lastItemFinishedTime.setVisibility(VISIBLE);
+
+        return;
     }
 
     private void setTextOrHide(TextView view, String text) {
@@ -201,6 +236,13 @@ public class FoldersAdapter extends ArrayAdapter<Folder> {
             view.setText(text);
             view.setVisibility(VISIBLE);
         }
+    }
+
+    private final String getShortPathForUI(final String path) {
+        String shortenedPath = path.replaceFirst("/storage/emulated/0", "[int]");
+        shortenedPath = shortenedPath.replaceFirst("/storage/[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}", "[ext]");
+        shortenedPath = shortenedPath.replaceFirst("/" + mContext.getPackageName(), "/[app]");
+        return "\u2756 " + Util.getPathEllipsis(shortenedPath);
     }
 
     private void onClickOverride(View view, Folder folder) {

@@ -205,10 +205,18 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
                     }
                 }
                 if (!TextUtils.isEmpty(folderPath)) {
+                    if (TextUtils.isEmpty(error)) {
+                        // We don't intend to show errors as the last synced item on the UI.
+                        mRestApi.setLocalFolderLastItemFinished(folderId, action, relativeFilePath, event.time);
+                    }
                     onItemFinished(action, error, new File(folderPath, relativeFilePath));
                 } else {
                     Log.w(TAG, "ItemFinished: Failed to determine folder.path for folder.id=\"" + (TextUtils.isEmpty(folderId) ? "" : folderId) + "\"");
                 }
+                break;
+            case "LocalIndexUpdated":
+                LogV("Event " + event.type + ", data " + event.data);
+                onLocalIndexUpdated(json, (String) event.data.get("folder"), event.time);
                 break;
             case "Ping":
                 // Ignored.
@@ -225,7 +233,6 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
             case "FolderWatchStateChanged":
             case "ItemStarted":
             case "ListenAddressesChanged":
-            case "LocalIndexUpdated":
             case "LoginAttempt":
             case "RemoteDownloadProgress":
             case "RemoteIndexUpdated":
@@ -384,6 +391,37 @@ public class EventProcessor implements  Runnable, RestApi.OnReceiveEventListener
                 break;
             default:
                 Log.w(TAG, "onItemFinished: Unhandled action \"" + action + "\"");
+        }
+    }
+
+    private void onLocalIndexUpdated(final JsonElement json,
+                                            final String folderId,
+                                            final String dateTimeStamp) {
+        JsonElement data = ((JsonObject) json).get("data");
+        if (data == null) {
+            Log.e(TAG, "onLocalIndexUpdated: data == null");
+            return;
+        }
+        JsonArray filenames = (JsonArray) ((JsonObject) data).get("filenames");
+        if (filenames == null) {
+            Log.e(TAG, "onLocalIndexUpdated: filenames == null");
+            return;
+        }
+        for (int i = 0; i < filenames.size(); i++) {
+            String filename = ((JsonElement) filenames.get(i)).toString();
+            if (!TextUtils.isEmpty(filename)) {
+                filename = filename.replaceAll("^\"|\"$", "");
+                LogV("onLocalIndexUpdated: filename=[" + filename + "], time=[" + dateTimeStamp + "]");
+                if (i == filenames.size() - 1) {
+                    // Send the last (latest) local change to the UI.
+                    mRestApi.setLocalFolderLastItemFinished(
+                            folderId,
+                            "update",
+                            filename,
+                            dateTimeStamp
+                    );
+                }
+            }
         }
     }
 

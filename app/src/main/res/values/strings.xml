@@ -194,8 +194,14 @@ Please report any problems you encounter via Github.</string>
     <!-- Indicates that the device is paused and does not sync -->
     <string name="device_paused">Paused</string>
 
+    <!-- Indicates that devices does not share any folders -->
+    <string name="device_state_unused">Unused</string>
+
     <!-- Indicates that the device connection is unknown -->
     <string name="device_state_unknown">Unknown</string>
+
+    <!-- Title for the listing of shared folders with a colon and space appended -->
+    <string name="shared_folders_title_colon">Folders:\u0020</string>
 
     <!-- Title for current download rate -->
     <string name="download_title">Download</string>
@@ -223,9 +229,6 @@ Please report any problems you encounter via Github.</string>
 
     <!-- Same as upload_title with a colon and space appended -->
     <string name="upload_title_colon">Upload:\u0020</string>
-
-    <!-- Title for current CPU usage -->
-    <string name="cpu_usage">CPU Usage</string>
 
     <!-- Title for current RAM usage -->
     <string name="ram_usage">RAM Usage</string>
@@ -324,6 +327,9 @@ Please report any problems you encounter via Github.</string>
     <string name="name">Name</string>
 
     <!-- Setting title -->
+    <string name="folders">Folders</string>
+
+    <!-- Setting title -->
     <string name="addresses">Addresses</string>
 
     <!-- Setting title -->
@@ -376,6 +382,9 @@ Please report any problems you encounter via Github.</string>
 
     <!-- Dialog message if no compatible barcode scanner app is installed -->
     <string name="install_barcode_scanner_app_message">This requires a barcode scanner app. Would you like to install the app \'Binary Eye\' from F-Droid?</string>
+
+    <!-- Shown if no folders are configured -->
+    <string name="folders_list_empty">No folders configured. Tap to add a new folder.</string>
 
     <!-- Toast show if we could not get root permissions -->
     <string name="toast_root_denied">Did not get root permissions</string>

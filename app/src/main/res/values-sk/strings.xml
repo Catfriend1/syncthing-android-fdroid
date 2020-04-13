@@ -84,9 +84,6 @@
     <!-- Same as upload_title with a colon and space appended -->
     <string name="upload_title_colon">Odosielanie:\u0020</string>
 
-    <!-- Title for current CPU usage -->
-    <string name="cpu_usage">Vyťaženie procesora</string>
-
     <!-- Title for current RAM usage -->
     <string name="ram_usage">Využitie RAM</string>
 

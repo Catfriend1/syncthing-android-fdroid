@@ -129,27 +129,30 @@ public class ConfigRouter {
     }
 
     public List<Device> getDevices(RestApi restApi, Boolean includeLocal) {
+        List<Device> devices;
+        List<Folder> folders;
+
         if (restApi == null || !restApi.isConfigLoaded()) {
             // Syncthing is not running or REST API is not (yet) available.
             configXml.loadConfig();
-            return configXml.getDevices(includeLocal);
+            devices = configXml.getDevices(includeLocal);
+            folders = configXml.getFolders();
+        } else {
+            // Syncthing is running and REST API is available.
+            devices = restApi.getDevices(includeLocal);
+            folders = restApi.getFolders();
         }
 
-        // Syncthing is running and REST API is available.
-        return restApi.getDevices(includeLocal);
-    }
-
-    public void addDevice(RestApi restApi, Device device) {
-        if (restApi == null || !restApi.isConfigLoaded()) {
-            // Syncthing is not running or REST API is not (yet) available.
-            configXml.loadConfig();
-            configXml.addDevice(device);
-            configXml.saveChanges();
-            return;
+        for (Device device : devices) {
+            for (Folder folder : folders) {
+                if (folder.getDevice(device.deviceID) != null) {
+                    // "device" is sharing "folder".
+                    device.addFolder(folder);
+                }
+            }
         }
 
-        // Syncthing is running and REST API is available.
-        restApi.addDevice(device);       // This will send the config afterwards.
+        return devices;
     }
 
     public void updateDevice(RestApi restApi, final Device device) {
