@@ -64,7 +64,7 @@ android {
     }
     buildTypes {
         release {
-            applicationIdSuffix ".fdroid"
+            applicationIdSuffix ""
             signingConfig = signingConfigs.release.storeFile ? signingConfigs.release : null
         }
         gplay {
