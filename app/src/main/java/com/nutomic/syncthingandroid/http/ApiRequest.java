@@ -31,10 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Map;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
+import javax.net.ssl.*;
 
 public abstract class ApiRequest {
 
@@ -172,13 +169,18 @@ public abstract class ApiRequest {
             return super.createConnection(url);
         }
     }
-
+    
     private SSLSocketFactory getSslSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             File httpsCertPath = Constants.getHttpsCertFile(mContext);
             sslContext.init(null, new TrustManager[]{new SyncthingTrustManager(httpsCertPath)},
                     new SecureRandom());
+            SSLSessionContext sslSessionContext = sslContext.getServerSessionContext();
+            int sessionCacheSize = sslSessionContext.getSessionCacheSize();
+            if (sessionCacheSize > 0) {
+                sslSessionContext.setSessionCacheSize(0);
+            }
             return sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             Log.w(TAG, e);
