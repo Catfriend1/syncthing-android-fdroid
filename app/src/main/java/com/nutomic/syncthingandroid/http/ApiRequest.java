@@ -31,7 +31,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Map;
 
-import javax.net.ssl.*;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.SSLSessionContext;
 
 public abstract class ApiRequest {
 
@@ -169,7 +173,7 @@ public abstract class ApiRequest {
             return super.createConnection(url);
         }
     }
-    
+
     private SSLSocketFactory getSslSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
