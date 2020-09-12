@@ -50,6 +50,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,7 +93,7 @@ public class RestApi {
     }
 
     private final Context mContext;
-    private final URL mUrl;
+    private URL mUrl;
     private final String mApiKey;
 
     private String mVersion;
@@ -190,14 +191,14 @@ public class RestApi {
                 asyncQueryVersionComplete = true;
                 checkReadConfigFromRestApiCompleted();
             }
-        });
+        }, error -> {});
         new GetRequest(mContext, mUrl, GetRequest.URI_CONFIG, mApiKey, null, result -> {
             onReloadConfigComplete(result);
             synchronized (mAsyncQueryCompleteLock) {
                 asyncQueryConfigComplete = true;
                 checkReadConfigFromRestApiCompleted();
             }
-        });
+        }, error -> {});
         getSystemStatus(info -> {
             mLocalDeviceId = info.myID;
             mUrVersionMax = info.urVersionMax;
@@ -217,7 +218,7 @@ public class RestApi {
     }
 
     public void reloadConfig() {
-        new GetRequest(mContext, mUrl, GetRequest.URI_CONFIG, mApiKey, null, this::onReloadConfigComplete);
+        new GetRequest(mContext, mUrl, GetRequest.URI_CONFIG, mApiKey, null, this::onReloadConfigComplete, error -> {});
     }
 
     private void onReloadConfigComplete(String result) {
@@ -319,7 +320,7 @@ public class RestApi {
                 } catch (Exception e) {
                     Log.w(TAG, "updateDebugFacilitiesCache: Failed to get debug facilities. result=" + result);
                 }
-            });
+            }, error -> {});
         }
     }
 
@@ -455,12 +456,23 @@ public class RestApi {
             ImmutableMap.of("folder", folderId), null, null);
     }
 
+    public URL getWebGuiUrl() {
+        synchronized (mConfigLock) {
+            String urlProtocol = Constants.osSupportsTLS12() ? "https" : "http";
+            try {
+                return new URL(urlProtocol + "://" + mConfig.gui.address);
+            } catch (MalformedURLException e) {
+                throw new RuntimeException("Failed to parse web interface URL", e);
+            }
+        }
+    }
+
     /**
      * Sends current config to Syncthing.
      * Will result in a "ConfigSaved" event.
      * EventProcessor will trigger this.reloadConfig().
      */
-    private void sendConfig() {
+    public void sendConfig() {
         String jsonConfig;
         synchronized (mConfigLock) {
             jsonConfig = mGson.toJson(mConfig);
@@ -468,23 +480,7 @@ public class RestApi {
         // LogVMultipleLines("sendConfig: config=" + jsonToPrettyFormat(jsonConfig));
         new PostRequest(mContext, mUrl, PostRequest.URI_SYSTEM_CONFIG, mApiKey,
             null, jsonConfig, null);
-        mOnConfigChangedListener.onConfigChanged();
-    }
-
-    /**
-     * Sends current config and restarts Syncthing.
-     */
-    public void saveConfigAndRestart() {
-        String jsonConfig;
-        synchronized (mConfigLock) {
-            jsonConfig = mGson.toJson(mConfig);
-        }
-        new PostRequest(mContext, mUrl, PostRequest.URI_SYSTEM_CONFIG, mApiKey,
-                null, jsonConfig, result -> {
-            Intent intent = new Intent(mContext, SyncthingService.class)
-                    .setAction(SyncthingService.ACTION_RESTART);
-            mContext.startService(intent);
-        });
+        mUrl = getWebGuiUrl();
         mOnConfigChangedListener.onConfigChanged();
     }
 
@@ -707,7 +703,7 @@ public class RestApi {
             } catch (Exception e) {
                 Log.e(TAG, "getSystemStatus: Parsing REST API result failed. result=" + result);
             }
-        });
+        }, error -> {});
     }
 
     public boolean isConfigLoaded() {
@@ -730,7 +726,7 @@ public class RestApi {
                 discoveredDevices.put(TestData.DEVICE_B_ID, fakeDiscoveredDevice);
             }
             listener.onResult(discoveredDevices);
-        });
+        }, error -> {});
     }
 
     /**
@@ -741,7 +737,7 @@ public class RestApi {
                 ImmutableMap.of("folder", folderId), result -> {
             FolderIgnoreList folderIgnoreList = mGson.fromJson(result, FolderIgnoreList.class);
             listener.onResult(folderIgnoreList);
-        });
+        }, error -> {});
     }
 
     /**
@@ -761,7 +757,7 @@ public class RestApi {
         new GetRequest(mContext, mUrl, GetRequest.URI_VERSION, mApiKey, null, result -> {
             SystemVersion systemVersion = mGson.fromJson(result, SystemVersion.class);
             listener.onResult(systemVersion);
-        });
+        }, error -> {});
     }
 
     /**
@@ -790,7 +786,7 @@ public class RestApi {
                                 e.getValue()            // connection
                         );
                     }
-            });
+            }, error -> {});
             new GetRequest(mContext, mUrl, GetRequest.URI_STATS_DEVICE, mApiKey, null, result -> {
                     /**
                      * We got the last seen timestamp for ALL devices - including the local device - instead of one.
@@ -813,7 +809,7 @@ public class RestApi {
                                 .putString(Constants.PREF_CACHE_DEVICE_LASTSEEN_PREFIX + resultDeviceId, deviceStat.lastSeen)
                                 .apply();
                     }
-            });
+            }, error -> {});
         }
         return cacheEntry;
     }
@@ -911,7 +907,7 @@ public class RestApi {
                     } catch (Exception e) {
                         Log.e(TAG, "getDiskEvents: Parsing REST API result failed. result=" + result);
                     }
-                }
+                }, error -> {}
         );
     }
 
@@ -919,6 +915,8 @@ public class RestApi {
      * Listener for {@link #getEvents}.
      */
     public interface OnReceiveEventListener {
+        void onError();
+
         /**
          * Called for each event.
          */
@@ -955,6 +953,8 @@ public class RestApi {
             }
 
             listener.onDone(lastId);
+        }, error -> {
+            listener.onError();
         });
     }
 
@@ -982,7 +982,7 @@ public class RestApi {
                         folder.paused,
                         mGson.fromJson(result, FolderStatus.class)
                 );
-            });
+            }, error -> {});
         }
         return cacheEntry;
     }
@@ -1069,7 +1069,7 @@ public class RestApi {
             JsonElement json = new JsonParser().parse(result);
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
             listener.onResult(gson.toJson(json));
-        });
+        }, error -> {});
     }
 
     public String getApiKey() {
@@ -1138,7 +1138,7 @@ public class RestApi {
             if (listener != null) {
                 listener.onResult(failSuccess);
             }
-        });
+        }, error -> {});
     }
 
     /**
