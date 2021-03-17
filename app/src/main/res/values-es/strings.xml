@@ -171,8 +171,6 @@ Por favor, reporte cualquier problema que encuentre mediante GitHub.</string>
 
     <!-- Suggest File Manager App Dialog -->
     <string name="suggest_file_manager_app_dialog_title">No se ha encontrado un gestor de archivos compatible</string>
-    <string name="suggest_file_manager_app_dialog_text">Recomendamos que instale el gestor de archivos de código abierto \"Simple File Manager\" de F-Droid. ¿Desea abrir su página de la tienda de aplicaciones?</string>
-
     <!-- DeviceListFragment -->
 
     <!-- Devices tab title -->
@@ -260,7 +258,6 @@ Por favor, reporte cualquier problema que encuentre mediante GitHub.</string>
 
     <!-- Setting title -->
     <string name="directory">Directorio</string>
-
     <!-- Setting title and description -->
     <string name="folder_fileWatcher">Vigila los cambios</string>
     <string name="folder_fileWatcherDescription">Le pide al sistema operativo notificar los cambios en los archivos. Si se desactiva, regresa a los escaneos periódicos por hora.</string>

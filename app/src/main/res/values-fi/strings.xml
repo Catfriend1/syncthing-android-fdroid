@@ -168,8 +168,6 @@
 
     <!-- Suggest File Manager App Dialog -->
     <string name="suggest_file_manager_app_dialog_title">Yhteensopivaa tiedostonhallintasovellusta ei löytynyt</string>
-    <string name="suggest_file_manager_app_dialog_text">Suosittelemme asentamaan avoimen lähdekoodin tiedostonhallintasovelluksen \'Simple File Manager\' F-Droidista. Haluaisitko avata kyseisen sovelluksen sivun sovelluskaupassa?</string>
-
     <!-- DeviceListFragment -->
 
     <!-- Devices tab title -->
@@ -257,7 +255,6 @@
 
     <!-- Setting title -->
     <string name="directory">Hakemisto</string>
-
     <!-- Setting title and description -->
     <string name="folder_fileWatcher">Tarkkaile muutoksia</string>
     <string name="folder_fileWatcherDescription">Pyytää käyttöjärjestelmää ilmoittamaan muutoksista tiedostoihin. Kerran tunnissa skannaus otetaan käyttöön, jos tämä on pois päältä.</string>

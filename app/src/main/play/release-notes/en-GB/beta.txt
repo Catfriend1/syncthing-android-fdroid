@@ -1,14 +1,15 @@
-* Syncthing v1.14.0
-* Support new v1.14.x config format in the wrapper (#750)
+* Syncthing v1.15.0-rc.5
 
 Enhanced
 --
+- Android 11: Offer advanced folder picker (#690)
 
 
 Fixes
 --
-- Fixed "maxConflicts" setting not preserved by wrapper (#750)
-- Fixed Work profile path bug (#733)
+- Stop qr scanner when app is backgrounded (#748)
+- Android 11: Fix opening file manager app (#762)
+
 
 Other issues
 --
