@@ -20,6 +20,7 @@ import android.os.Looper;
 import android.os.PowerManager;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.nutomic.syncthingandroid.R;
@@ -50,10 +51,6 @@ public class RunConditionMonitor {
 
     public static final String EXTRA_BEGIN_ACTIVE_TIME_WINDOW =
         "com.github.catfriend1.syncthingandroid.service.RunConditionMonitor.BEGIN_ACTIVE_TIME_WINDOW";
-
-    private static final String POWER_SOURCE_CHARGER_BATTERY = "ac_and_battery_power";
-    private static final String POWER_SOURCE_CHARGER = "ac_power";
-    private static final String POWER_SOURCE_BATTERY = "battery_power";
 
     private @Nullable Object mSyncStatusObserverHandle = null;
     private final SyncStatusObserver mSyncStatusObserver = new SyncStatusObserver() {
@@ -106,9 +103,11 @@ public class RunConditionMonitor {
      * Only relevant if the user has enabled turning Syncthing on by
      * time schedule for a specific amount of time periodically.
      * Holds true if we are within a "SyncthingNative should run" time frame.
-     * Initial status true because we like to sync on app start, too.
+     * Initial status false because we check if the last sync was more than one hour ago on app start.
      */
-    private Boolean mTimeConditionMatch = true;
+    private Boolean mTimeConditionMatch = false;
+    // Avoid re-scheduling start if run conditions change while already running.
+    private Boolean mRunAllowedStopScheduled = false;
 
     @Inject
     SharedPreferences mPreferences;
@@ -173,14 +172,40 @@ public class RunConditionMonitor {
         localBroadcastManager.registerReceiver(mUpdateShouldRunDecisionReceiver,
                 new IntentFilter(ACTION_UPDATE_SHOULDRUN_DECISION));
 
+        long lastSyncTimeSinceBootMillisecs = mPreferences.getLong(Constants.PREF_LAST_RUN_TIME, 0);
+        long elapsedRealtime = SystemClock.elapsedRealtime();
+        /**
+         * after a reboot lastSyncTimeSinceBootMillisecs might be larger than elapsedRealtime,
+         * since it is referring to the previous reboot
+         * in this case we set mPreferences.getLong(Constants.PREF_LAST_RUN_TIME, 0)
+         * to -WAIT_FOR_NEXT_SYNC_DELAY_SECS, so mTimeConditionMatch is guaranteed to be true
+         */
+        if (lastSyncTimeSinceBootMillisecs > elapsedRealtime) {
+            SharedPreferences.Editor editor = mPreferences.edit();
+            editor.putLong(Constants.PREF_LAST_RUN_TIME, -Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS);
+            editor.apply();
+            lastSyncTimeSinceBootMillisecs = 0;
+        }
+
         // Initially determine if syncthing should run under current circumstances.
         updateShouldRunDecision();
 
         // Initially schedule the SyncTrigger job.
+        int elapsedSecondsSinceLastSync = (int) (elapsedRealtime - lastSyncTimeSinceBootMillisecs) / 1000;
+        Log.d(TAG, "JobPrepare: mTimeConditionMatch=" + mTimeConditionMatch.toString() +
+                ", elapsedRealtime=" + elapsedRealtime +
+                ", lastSyncTimeSinceBootMillisecs=" + lastSyncTimeSinceBootMillisecs +
+                ", elapsedSecondsSinceLastSync=" + elapsedSecondsSinceLastSync
+        );
         JobUtils.scheduleSyncTriggerServiceJob(context,
                 mTimeConditionMatch ?
                     Constants.TRIGGERED_SYNC_DURATION_SECS :
-                    Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS
+                       /**
+                        * if Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS - elapsedSecondsSinceLastSync is < 0,
+                        * mTimeConditionMatch is set to true during updateShouldRunDecision().
+                        * Thus the false case cannot be triggered if the delay for scheduleSyncTriggerServiceJob would be negative
+                        */
+                    Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS - elapsedSecondsSinceLastSync
         );
     }
 
@@ -239,6 +264,7 @@ public class RunConditionMonitor {
     private class SyncTriggerReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            mRunAllowedStopScheduled = false;
             boolean extraBeginActiveTimeWindow = intent.getBooleanExtra(EXTRA_BEGIN_ACTIVE_TIME_WINDOW, false);
             LogV("SyncTriggerReceiver: onReceive, extraBeginActiveTimeWindow=" + Boolean.toString(extraBeginActiveTimeWindow));
 
@@ -260,6 +286,12 @@ public class RunConditionMonitor {
             if (extraBeginActiveTimeWindow) {
                 // We should immediately start SyncthingNative for TRIGGERED_SYNC_DURATION_SECS.
                 mTimeConditionMatch = true;
+                JobUtils.cancelAllScheduledJobs(context);
+                JobUtils.scheduleSyncTriggerServiceJob(
+                        context,
+                        Constants.TRIGGERED_SYNC_DURATION_SECS
+                );
+                mRunAllowedStopScheduled = true;
             } else {
                 /**
                  * Toggle the "digital input" for this condition as the condition change is
@@ -278,11 +310,13 @@ public class RunConditionMonitor {
              * let the receiver fire and change to "SyncthingNative should run" after
              * WAIT_FOR_NEXT_SYNC_DELAY_SECS seconds elapsed.
              */
-            JobUtils.cancelAllScheduledJobs(context);
-            JobUtils.scheduleSyncTriggerServiceJob(
-                    context,
-                    mTimeConditionMatch ? Constants.TRIGGERED_SYNC_DURATION_SECS : Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS
-            );
+            if (!mRunAllowedStopScheduled) {
+                JobUtils.cancelAllScheduledJobs(context);
+                JobUtils.scheduleSyncTriggerServiceJob(
+                        context,
+                        Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS
+                );
+            }
         }
     }
 
@@ -332,6 +366,20 @@ public class RunConditionMonitor {
                 mOnShouldRunChangedListener.onShouldRunDecisionChanged(newShouldRun);
                 lastDeterminedShouldRun = newShouldRun;
             }
+            if (newShouldRun &&
+                    !mRunAllowedStopScheduled &&
+                    mPreferences.getBoolean(Constants.PREF_RUN_ON_TIME_SCHEDULE, false) &&
+                    mPreferences.getInt(Constants.PREF_BTNSTATE_FORCE_START_STOP, Constants.BTNSTATE_NO_FORCE_START_STOP) == Constants.BTNSTATE_NO_FORCE_START_STOP) {
+                JobUtils.cancelAllScheduledJobs(mContext);
+                JobUtils.scheduleSyncTriggerServiceJob(
+                        mContext,
+                        Constants.TRIGGERED_SYNC_DURATION_SECS
+                );
+                mRunAllowedStopScheduled = true;
+            }
+            SharedPreferences.Editor editor = mPreferences.edit();
+            editor.putLong(Constants.PREF_LAST_RUN_TIME, SystemClock.elapsedRealtime());
+            editor.apply();
         }
     }
 
@@ -365,6 +413,25 @@ public class RunConditionMonitor {
          * to wifi during flight mode, see {@link isWifiOrEthernetConnection}.
          */
         return new SyncConditionResult(false, "\n" + res.getString(R.string.reason_not_on_wifi));
+    }
+
+    private SyncConditionResult checkConditionSyncOnPowerSource(String prefNameSyncOnPowerSource) {
+        switch (mPreferences.getString(prefNameSyncOnPowerSource, Constants.PowerSource.CHARGER_BATTERY)) {
+            case Constants.PowerSource.CHARGER:
+                if (!isCharging_API17()) {
+                    return new SyncConditionResult(false, res.getString(R.string.reason_not_charging));
+                }
+                break;
+            case Constants.PowerSource.BATTERY:
+                if (isCharging_API17()) {
+                    return new SyncConditionResult(false, res.getString(R.string.reason_not_on_battery_power));
+                }
+                break;
+            case Constants.PowerSource.CHARGER_BATTERY:
+            default:
+                break;
+        }
+        return new SyncConditionResult(true, "");
     }
 
     /**
@@ -448,7 +515,6 @@ public class RunConditionMonitor {
 
         // Get sync condition preferences.
         int prefBtnStateForceStartStop = mPreferences.getInt(Constants.PREF_BTNSTATE_FORCE_START_STOP, Constants.BTNSTATE_NO_FORCE_START_STOP);
-        String prefPowerSource = mPreferences.getString(Constants.PREF_POWER_SOURCE, POWER_SOURCE_CHARGER_BATTERY);
         boolean prefRespectPowerSaving = mPreferences.getBoolean(Constants.PREF_RESPECT_BATTERY_SAVING, true);
         boolean prefRespectMasterSync = mPreferences.getBoolean(Constants.PREF_RESPECT_MASTER_SYNC, false);
         boolean prefRunInFlightMode = mPreferences.getBoolean(Constants.PREF_RUN_IN_FLIGHT_MODE, false);
@@ -467,32 +533,28 @@ public class RunConditionMonitor {
         }
 
         // PREF_RUN_ON_TIME_SCHEDULE
+        // set mTimeConditionMatch to true if the last run was more than WAIT_FOR_NEXT_SYNC_DELAY_SECS ago
+        if (SystemClock.elapsedRealtime() - mPreferences.getLong(Constants.PREF_LAST_RUN_TIME,0) > Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS * 1000)
+            mTimeConditionMatch = true;
         if (prefRunOnTimeSchedule && !mTimeConditionMatch) {
             // Currently, we aren't within a "SyncthingNative should run" time frame.
             LogV("decideShouldRun: PREF_RUN_ON_TIME_SCHEDULE && !mTimeConditionMatch");
-            mRunDecisionExplanation = res.getString(R.string.reason_not_within_time_frame);
+            int minutes = (int) (SystemClock.elapsedRealtime() - mPreferences.getLong(Constants.PREF_LAST_RUN_TIME,0))/(60*1000);
+            String minutesText;
+            if (minutes == 0)
+                minutesText = res.getString(R.string.reason_not_within_time_frame_0_min);
+            else
+                minutesText = String.format(res.getQuantityString(R.plurals.reason_not_within_time_frame_minutes,minutes),minutes);
+            mRunDecisionExplanation = String.format(res.getString(R.string.reason_not_within_time_frame_2),minutesText);
             return false;
         }
 
         // PREF_POWER_SOURCE
-        switch (prefPowerSource) {
-            case POWER_SOURCE_CHARGER:
-                if (!isCharging_API17()) {
-                    LogV("decideShouldRun: POWER_SOURCE_AC && !isCharging");
-                    mRunDecisionExplanation = res.getString(R.string.reason_not_charging);
-                    return false;
-                }
-                break;
-            case POWER_SOURCE_BATTERY:
-                if (isCharging_API17()) {
-                    LogV("decideShouldRun: POWER_SOURCE_BATTERY && isCharging");
-                    mRunDecisionExplanation = res.getString(R.string.reason_not_on_battery_power);
-                    return false;
-                }
-                break;
-            case POWER_SOURCE_CHARGER_BATTERY:
-            default:
-                break;
+        SyncConditionResult scr = checkConditionSyncOnPowerSource(Constants.PREF_POWER_SOURCE);
+        if (!scr.conditionMet) {
+            LogV("checkConditionSyncOnPowerSource: " + scr.explanation);
+            mRunDecisionExplanation = scr.explanation;
+            return false;
         }
 
         // Power saving
@@ -512,7 +574,7 @@ public class RunConditionMonitor {
         }
 
         // Run on mobile data?
-        SyncConditionResult scr = checkConditionSyncOnMobileData(Constants.PREF_RUN_ON_MOBILE_DATA);
+        scr = checkConditionSyncOnMobileData(Constants.PREF_RUN_ON_MOBILE_DATA);
         mRunDecisionExplanation += scr.explanation;
         if (scr.conditionMet) {
             // Mobile data is connected.
@@ -569,8 +631,15 @@ public class RunConditionMonitor {
      * Precondition: Object must own pref "...CustomSyncConditionsEnabled == true".
      */
     public Boolean checkObjectSyncConditions(String objectPrefixAndId) {
+        // Sync on specific power source?
+        SyncConditionResult scr = checkConditionSyncOnPowerSource(Constants.DYN_PREF_OBJECT_SYNC_ON_POWER_SOURCE(objectPrefixAndId));
+        if (!scr.conditionMet) {
+            LogV("checkObjectSyncConditions(" + objectPrefixAndId + "): checkConditionSyncOnPowerSource");
+            return false;
+        }
+
         // Sync on mobile data?
-        SyncConditionResult scr = checkConditionSyncOnMobileData(Constants.DYN_PREF_OBJECT_SYNC_ON_MOBILE_DATA(objectPrefixAndId));
+        scr = checkConditionSyncOnMobileData(Constants.DYN_PREF_OBJECT_SYNC_ON_MOBILE_DATA(objectPrefixAndId));
         if (scr.conditionMet) {
             // Mobile data is connected.
             LogV("checkObjectSyncConditions(" + objectPrefixAndId + "): checkConditionSyncOnMobileData");
