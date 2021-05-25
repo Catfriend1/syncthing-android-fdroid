@@ -86,6 +86,10 @@ Bitte melden Sie auftretende Probleme via GitHub.</string>
 
     <string name="photo_shoot_intro_permission_desc">Syncthing Kamera erfordert Deine Zustimmung, um Fotos aufzunehmen und auf Deinem Gerät zu speichern. Das Feature ist optional. Um es zu verwenden, erteile die Berechtigungen und tippe auf \"Weiter\". Wir richten Dir einen Syncthing Kamera-Ordner ein, den Du später für andere Syncthing-Geräte freigeben kannst.</string>
 
+    <string name="photo_shoot_take_picture_success">Das Foto wurde erfolgreich im Syncthing Kamera Ordner gespeichert.</string>
+
+    <string name="photo_shoot_take_picture_failure">Fotoaufnahme fehlgeschlagen oder Du hast abgebrochen.</string>
+
     <!-- Label of the folder created by the Syncthing Camera feature. -->
     <string name="default_syncthing_camera_folder_label">Syncthing Kamera</string>
 
@@ -430,6 +434,8 @@ Bitte melden Sie auftretende Probleme via GitHub.</string>
     <string name="recent_changes_title">Letzte Änderungen</string>
     <string name="modified_by_device">Gerät: %1$s</string>
     <string name="modification_time">Zeit: %1$s</string>
+
+    <string name="this_device">Dieses Gerät</string>
 
 
     <!-- WebGuiActivity -->

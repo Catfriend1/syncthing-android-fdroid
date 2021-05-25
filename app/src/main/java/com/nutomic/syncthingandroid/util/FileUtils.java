@@ -17,6 +17,8 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import com.nutomic.syncthingandroid.R;
 
@@ -50,7 +52,8 @@ public class FileUtils {
 
     public enum ExternalStorageDirType {
         DATA,
-        MEDIA
+        EXT_MEDIA,
+        INT_MEDIA
     }
 
     @Nullable
@@ -162,6 +165,55 @@ public class FileUtils {
         // return null;
     }
 
+    public static File getExternalFilesDir(Context context, String type) {
+        return getExternalFilesDir(context, ExternalStorageDirType.DATA, type);
+    }
+
+    public static File getExternalFilesDir(Context context, ExternalStorageDirType extDirType, String type) {
+        /**
+         * Determine the app's private data folder on external storage if present.
+         * e.g. "/storage/abcd-efgh/Android/data/[PACKAGE_NAME]/files"
+         * e.g. "/storage/abcd-efgh/Android/media/[PACKAGE_NAME]"
+         */
+        ArrayList<File> externalFilesDir = new ArrayList<>();
+        switch(extDirType){
+            case DATA:
+                externalFilesDir.addAll(Arrays.asList(ContextCompat.getExternalFilesDirs(context, null)));
+                if (externalFilesDir.size() > 1) {
+                    // There is a bug on Huawei devices running Android 7, which returns the wrong external path.
+                    // That's why we use ContextCompat here instead of context.
+                    // See https://github.com/Catfriend1/syncthing-android/issues/541
+                    // ... and: https://stackoverflow.com/questions/39895579/fileprovider-error-onhuawei-devices
+                    externalFilesDir.remove(context.getExternalFilesDir(null));
+                }
+                break;
+            case INT_MEDIA:
+                externalFilesDir.add(new File(Environment.getExternalStorageDirectory() + "/Android/media/" + context.getPackageName()));
+                break;
+            case EXT_MEDIA:
+                externalFilesDir.addAll(Arrays.asList(context.getExternalMediaDirs()));
+                if (!externalFilesDir.isEmpty()) {
+                    externalFilesDir.remove(externalFilesDir.get(0));
+                }
+                break;
+        }
+        externalFilesDir.remove(null);      // getExternalFilesDirs may return null for an ejected SDcard.
+        if (externalFilesDir.isEmpty()) {
+            Log.w(TAG, "Could not determine app's private files directory on external storage.");
+            return null;
+        }
+        if (type != null) {
+            switch(extDirType) {
+                case EXT_MEDIA:
+                case INT_MEDIA:
+                    if (type.equals(Environment.DIRECTORY_PICTURES)) {
+                        return new File(externalFilesDir.get(0), Environment.DIRECTORY_PICTURES);
+                    }
+            }
+        }
+        return externalFilesDir.get(0);
+    }
+
     /**
      * FileProvider does not support converting the absolute path from
      * getExternalFilesDir() to a "content://" Uri. As "file://" Uri
@@ -175,29 +227,13 @@ public class FileUtils {
     @TargetApi(21)
     public static android.net.Uri getExternalFilesDirUri(Context context, ExternalStorageDirType extDirType) {
         try {
-            /**
-             * Determine the app's private data folder on external storage if present.
-             * e.g. "/storage/abcd-efgh/Android/[PACKAGE_NAME]/files"
-             */
-            ArrayList<File> externalFilesDir = new ArrayList<>();
-            switch(extDirType ){
-                case DATA:
-                    externalFilesDir.addAll(Arrays.asList(context.getExternalFilesDirs(null)));
-                    externalFilesDir.remove(context.getExternalFilesDir(null));
-                    break;
-                case MEDIA:
-                    externalFilesDir.addAll(Arrays.asList(context.getExternalMediaDirs()));
-                    if (externalFilesDir.size() > 0) {
-                        externalFilesDir.remove(externalFilesDir.get(0));
-                    }
-                    break;
-            }
-            externalFilesDir.remove(null);      // getExternalFilesDirs may return null for an ejected SDcard.
-            if (externalFilesDir.size() == 0) {
+            File externalFilesDir = getExternalFilesDir(context, extDirType, null);
+            if (externalFilesDir == null) {
                 Log.w(TAG, "Could not determine app's private files directory on external storage.");
                 return null;
             }
-            String absPath = externalFilesDir.get(0).getAbsolutePath();
+            String absPath = externalFilesDir.getAbsolutePath();
+
             // Log.v(TAG, "getExternalFilesDirUri: absPath=" + absPath);
             String[] segments = absPath.split("/");
             if (segments.length < 2) {
@@ -213,11 +249,17 @@ public class FileUtils {
                         "content://com.android.externalstorage.documents/document/" +
                         volumeId + "%3AAndroid%2Fdata%2F" +
                         context.getPackageName() + "%2Ffiles");
-                case MEDIA:
+                case EXT_MEDIA:
                     // Build the content Uri for our private ".../media/[PKG_NAME]" folder.
                     return android.net.Uri.parse(
                         "content://com.android.externalstorage.documents/document/" +
                         volumeId + "%3AAndroid%2Fmedia%2F" +
+                        context.getPackageName());
+                case INT_MEDIA:
+                    // Build the content Uri for our private ".../media/[PKG_NAME]" folder.
+                    return android.net.Uri.parse(
+                        "content://com.android.externalstorage.documents/document/" +
+                        "primary" + "%3AAndroid%2Fmedia%2F" +
                         context.getPackageName());
             }
         } catch (Exception e) {
@@ -898,7 +940,15 @@ public class FileUtils {
         String fileExtension = MimeTypeMap.getFileExtensionFromUrl(fileUri.toString());
         String mimeType = FileUtils.getMimeTypeFromFileExtension(fileExtension);
         Log.v(TAG, "openFile: Detected mime type \'" + mimeType + "\' for file \'" + fullPathAndFilename + "\'");
-        Intent intent = new Intent(Intent.ACTION_VIEW);
+        Intent intent;
+        switch(fileExtension) {
+            case "apk":
+                fileUri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", new File(fullPathAndFilename));
+                intent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+                break;
+            default:
+                intent = new Intent(Intent.ACTION_VIEW);
+        }
         intent.setDataAndType(fileUri, mimeType);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try {

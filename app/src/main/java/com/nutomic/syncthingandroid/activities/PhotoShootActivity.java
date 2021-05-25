@@ -26,6 +26,8 @@ import androidx.core.content.FileProvider;
 import com.nutomic.syncthingandroid.R;
 import com.nutomic.syncthingandroid.SyncthingApp;
 import com.nutomic.syncthingandroid.service.Constants;
+import com.nutomic.syncthingandroid.util.FileUtils;
+import com.nutomic.syncthingandroid.util.FileUtils.ExternalStorageDirType;
 
 import java.io.IOException;
 import java.io.File;
@@ -192,12 +194,12 @@ public class PhotoShootActivity extends AppCompatActivity {
              new SimpleDateFormat("yyyyMMdd_HHmmss",
                           Locale.getDefault()).format(new Date());
         String imageFileName = "IMG_" + timeStamp + "_";
-        File storageDir =
-                    this.getExternalFilesDir(this, Environment.DIRECTORY_PICTURES);
+        File storageDir = FileUtils.getExternalFilesDir(PhotoShootActivity.this, ExternalStorageDirType.INT_MEDIA, Environment.DIRECTORY_PICTURES);
         if (storageDir == null) {
             Log.e(TAG, "createImageFile: storageDir == null");
             return null;
         }
+        storageDir.mkdirs();
         File image = File.createTempFile(
                         imageFileName,  /* prefix */
                         ".jpg",         /* suffix */
@@ -210,12 +212,18 @@ public class PhotoShootActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode,
                                                   Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        boolean takePhotoSucceeded = false;
         if (requestCode == REQUEST_CAPTURE_IMAGE) {
-            if (resultCode == Activity.RESULT_OK) {
+            try {
+                MediaStore.Images.Media.getBitmap(getContentResolver(), lastPhotoURI).getWidth();
                 Log.d(TAG, "User took a picture.");
                 lastPhotoURI = null;
-            } else if(resultCode == Activity.RESULT_CANCELED) {
-                Log.d(TAG, "User cancelled to take a picture.");
+                takePhotoSucceeded = true;
+            } catch (Exception e) {
+                Log.d(TAG, "User cancelled or failed to take a picture.");
+            }
+
+            if (!takePhotoSucceeded) {
                 if (lastPhotoURI != null) {
                     Log.v(TAG, "Deleting temporary file [" + lastPhotoURI.getPath() + "]");
                     try {
@@ -226,7 +234,11 @@ public class PhotoShootActivity extends AppCompatActivity {
                     }
                     lastPhotoURI = null;
                 }
+                Toast.makeText(this, R.string.photo_shoot_take_picture_failure, Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            Toast.makeText(this, R.string.photo_shoot_take_picture_success, Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -290,17 +302,5 @@ public class PhotoShootActivity extends AppCompatActivity {
     private void updateButtons() {
         mBtnGrantCameraPerm.setVisibility(haveCameraPermission() ? View.GONE : View.VISIBLE);
         mBtnGrantStoragePerm.setVisibility(haveStoragePermission() ? View.GONE : View.VISIBLE);
-    }
-
-    public static File getExternalFilesDir(Context context, String type) {
-    	// There is a bug on Huawei devices running Android 7, which returns the wrong external path.
-        // See https://github.com/Catfriend1/syncthing-android/issues/541
-    	// ... and: https://stackoverflow.com/questions/39895579/fileprovider-error-onhuawei-devices
-        File[] externalFilesDirs = ContextCompat.getExternalFilesDirs(context, type);
-        if (externalFilesDirs.length > 0) {
-            return externalFilesDirs[0];
-        } else {
-            return null;
-        }
     }
 }
