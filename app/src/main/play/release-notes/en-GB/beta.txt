@@ -1,15 +1,15 @@
-* Syncthing v1.16.0
+* Syncthing v1.18.0
 
 Enhanced
 --
-- Android 11: keep synced user data when app is uninstalled (#806)
-- Support APK install from "Recent Changes" dialog (#812)
-- Improve PhotoShootActivity (#813)
+-
 
 
 Fixes
 --
-- Minor theme and UI fixes (#807, #811)
+- Fix opening file intents used in "Recent Changes" dialog (#816)
+- Clear prefs when importing backup from Syncthing app (#821)
+- Fix device orientation change in settings menus (#824 @vbh)
 
 
 Others
