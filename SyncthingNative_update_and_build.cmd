@@ -9,7 +9,7 @@ REM Script Consts.
 SET CLEAN_BEFORE_BUILD=1
 SET SKIP_CHECKOUT_SRC=0
 SET USE_GO_DEV=0
-SET DESIRED_SUBMODULE_VERSION=v1.18.0
+SET DESIRED_SUBMODULE_VERSION=v1.18.1
 SET GRADLEW_PARAMS=-q
 REM
 REM Runtime Variables.
@@ -25,7 +25,7 @@ where /q sed
 IF NOT "%ERRORLEVEL%" == "0" echo [ERROR] sed.exe not found on PATH env var. & goto :eos
 REM
 where /q python
-IF NOT "%ERRORLEVEL%" == "0" echo [ERROR] python.exe not found on PATH env var. & goto :eos
+IF NOT "%ERRORLEVEL%" == "0" echo [ERROR] python.exe not found on PATH env var. Download 'https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe' and run 'python-3.9.6-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0' & goto :eos
 REM
 IF "%CLEAN_BEFORE_BUILD%" == "1" call :cleanBeforeBuild
 REM
@@ -62,7 +62,7 @@ echo [INFO] Building submodule syncthing_%DESIRED_SUBMODULE_VERSION% ...
 call gradlew %GRADLEW_PARAMS% buildNative
 SET RESULT=%ERRORLEVEL%
 IF "%USE_GO_DEV%" == "1" call :revertGoDev
-IF NOT "%RESULT%" == "0" echo [ERROR] gradlew buildNative FAILED. & goto :eos
+IF NOT "%RESULT%" == "0" echo [ERROR] gradlew buildNative FAILED. If you got ANDROID_SDK_MISSING error, run 'install_minimum_android_sdk_prerequisites.py' first. & goto :eos
 REM
 echo [INFO] Reverting "go.mod", "go.sum" to checkout state ...
 cd /d "%SCRIPT_PATH%syncthing\src\github.com\syncthing\syncthing"

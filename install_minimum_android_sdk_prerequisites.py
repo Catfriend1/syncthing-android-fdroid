@@ -16,9 +16,11 @@ import platform
 
 SUPPORTED_PYTHON_PLATFORMS = ['Windows', 'Linux', 'Darwin']
 
-ANDROID_SDK_TOOLS_VERSION = '4333796'
-ANDROID_SDK_TOOLS_SHASUM_LINUX = '92ffee5a1d98d856634e8b71132e8a95d96c83a63fde1099be3d86df3106def9'
-ANDROID_SDK_TOOLS_SHASUM_WINDOWS = '7e81d69c303e47a4f0e748a6352d85cd0c8fd90a5a95ae4e076b5e5f960d3c7a'
+# Version numbers and URLs taken from
+## https://developer.android.com/studio/index.html#command-tools
+ANDROID_SDK_TOOLS_VERSION = '7583922'
+ANDROID_SDK_TOOLS_SHASUM_LINUX = '124f2d5115eee365df6cf3228ffbca6fc3911d16f8025bebd5b1c6e2fcfa7faf'
+ANDROID_SDK_TOOLS_SHASUM_WINDOWS = 'f9e6f91743bcb1cc6905648ca751bc33975b0dd11b50d691c2085d025514278c'
 
 def fail(message, *args, **kwargs):
     print((message % args).format(**kwargs))
@@ -76,10 +78,10 @@ def install_sdk_tools():
 
     zip_fullfn = prerequisite_tools_dir + os.path.sep + 'sdk-tools.zip';
     if sys.platform == 'win32':
-        url =               'https://dl.google.com/android/repository/sdk-tools-windows-' + ANDROID_SDK_TOOLS_VERSION + '.zip'
+        url =               'https://dl.google.com/android/repository/commandlinetools-win-' + ANDROID_SDK_TOOLS_VERSION + '_latest.zip'
         expected_shasum =   ANDROID_SDK_TOOLS_SHASUM_WINDOWS
     else:
-        url =               'https://dl.google.com/android/repository/sdk-tools-linux-' + ANDROID_SDK_TOOLS_VERSION + '.zip'
+        url =               'https://dl.google.com/android/repository/commandlinetools-linux-' + ANDROID_SDK_TOOLS_VERSION + '_latest.zip'
         expected_shasum =   ANDROID_SDK_TOOLS_SHASUM_LINUX
 
     # Download sdk-tools.
@@ -99,7 +101,7 @@ def install_sdk_tools():
     print("[ok] Checksum of", zip_fullfn, "matches expected value.")
 
     # Proceed with extraction of the NDK if necessary.
-    sdk_tools_path = prerequisite_tools_dir + os.path.sep + 'tools'
+    sdk_tools_path = prerequisite_tools_dir + os.path.sep + 'cmdline-tools'
     if not os.path.isfile(sdk_tools_path + os.path.sep + "source.properties"):
         print("Extracting sdk-tools ...")
         # This will go to a subfolder "tools" in the current path.
@@ -108,13 +110,23 @@ def install_sdk_tools():
         zip.extractall(prerequisite_tools_dir)
         zip.close()
 
+    # Move contents of cmdline-tools one level deeper into cmdline-tools/latest
+    sdk_tools_latest_path = sdk_tools_path + os.path.sep + 'latest'
+    if os.path.isdir(sdk_tools_latest_path):
+        shutil.rmtree(sdk_tools_latest_path)
+    os.makedirs(sdk_tools_latest_path)
+    shutil.move(sdk_tools_path + os.path.sep + 'NOTICE.txt', sdk_tools_latest_path)
+    shutil.move(sdk_tools_path + os.path.sep + 'source.properties', sdk_tools_latest_path)
+    shutil.move(sdk_tools_path + os.path.sep + 'bin', sdk_tools_latest_path)
+    shutil.move(sdk_tools_path + os.path.sep + 'lib', sdk_tools_latest_path)
+
     # Linux only - Set executable permission on files.
     if platform.system() == 'Linux':
         print("Setting permissions on sdk-tools executables ...")
         change_permissions_recursive(sdk_tools_path, 0o755);
 
     # Add tools/bin to PATH.
-    sdk_tools_bin_path = sdk_tools_path + os.path.sep + 'bin'
+    sdk_tools_bin_path = sdk_tools_latest_path + os.path.sep + 'bin'
     print('Adding to PATH:', sdk_tools_bin_path)
     os.environ["PATH"] += os.pathsep + sdk_tools_bin_path
 
@@ -154,8 +166,8 @@ print('sdk_manager_bin=\'' + sdk_manager_bin + '\'')
 if sys.platform == 'win32':
     subprocess.check_call([sdk_manager_bin, '--update'])
     powershell_bin = which('powershell')
-    subprocess.check_call([powershell_bin, 'for($i=0;$i -lt 30;$i++) { $response += \"y`n\"}; $response | sdkmanager --licenses'])
-    subprocess.check_call([sdk_manager_bin, 'platforms;android-29'])
-    subprocess.check_call([sdk_manager_bin, 'build-tools;29.0.2'])
+    subprocess.check_call([powershell_bin, 'for($i=0;$i -lt 31;$i++) { $response += \"y`n\"}; $response | sdkmanager --licenses'])
+    subprocess.check_call([sdk_manager_bin, 'platforms;android-30'])
+    subprocess.check_call([sdk_manager_bin, 'build-tools;30.0.2'])
 
 print('Done.')
