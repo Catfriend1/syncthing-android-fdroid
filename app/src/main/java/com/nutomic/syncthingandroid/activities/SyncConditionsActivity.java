@@ -152,7 +152,7 @@ public class SyncConditionsActivity extends SyncthingActivity {
         mSyncOnPowerSource.setEnabled(globalRunOnAnyPowerSource);
 
         // Read selected WiFi Ssid whitelist items.
-        Set<String> selectedWhitelistedSsid = mPreferences.getStringSet(mPrefSelectedWhitelistSsid, globalWhitelistedSsid);
+        Set<String> selectedWhitelistedSsid = new HashSet<String>(mPreferences.getStringSet(mPrefSelectedWhitelistSsid, globalWhitelistedSsid));
         // Removes any network that is no longer part of the global WiFi Ssid whitelist.
         selectedWhitelistedSsid.retainAll(globalWhitelistedSsid);
 
@@ -202,18 +202,19 @@ public class SyncConditionsActivity extends SyncthingActivity {
             new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton view, boolean isChecked) {
-            switch (view.getId()) {
-                case R.id.sync_on_wifi_title:
-                    mSyncOnWhitelistedWifi.setEnabled(mGlobalWhitelistEnabled && isChecked);
-                    // Fall-through to dependent options.
-                case R.id.sync_on_whitelisted_wifi_title:
-                    // Enable or disable WiFi Ssid switches according to parent switch.
-                    for (int i = 0; i < mWifiSsidContainer.getChildCount(); i++) {
-                        mWifiSsidContainer.getChildAt(i).setEnabled(mGlobalWhitelistEnabled && isChecked);
-                    }
-                    break;
-                default:
-                    break;
+            int id = view.getId();
+            if (id == R.id.sync_on_wifi_title) {
+                mSyncOnWhitelistedWifi.setEnabled(mGlobalWhitelistEnabled && isChecked);
+                // Fall-through to dependent options.
+
+                // Enable or disable WiFi Ssid switches according to parent switch.
+                for (int i = 0; i < mWifiSsidContainer.getChildCount(); i++) {
+                    mWifiSsidContainer.getChildAt(i).setEnabled(mGlobalWhitelistEnabled && isChecked);
+                }
+            } else if (id == R.id.sync_on_whitelisted_wifi_title) {// Enable or disable WiFi Ssid switches according to parent switch.
+                for (int i = 0; i < mWifiSsidContainer.getChildCount(); i++) {
+                    mWifiSsidContainer.getChildAt(i).setEnabled(mGlobalWhitelistEnabled && isChecked);
+                }
             }
             mUnsavedChanges = true;
         }

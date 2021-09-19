@@ -1,5 +1,6 @@
 package com.nutomic.syncthingandroid.activities;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -127,13 +128,11 @@ public class RecentChangesActivity extends SyncthingActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.refresh:
-                onTimerEvent();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == R.id.refresh) {
+            onTimerEvent();
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -187,6 +186,7 @@ public class RecentChangesActivity extends SyncthingActivity
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private void onReceiveDiskEvents(List<DiskEvent> diskEvents) {
         LogV("onReceiveDiskEvents");
         if (isFinishing()) {

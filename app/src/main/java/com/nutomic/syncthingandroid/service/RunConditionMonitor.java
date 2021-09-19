@@ -151,11 +151,9 @@ public class RunConditionMonitor {
         ReceiverManager.registerReceiver(mContext, new BatteryReceiver(), filter);
 
         // PowerSaveModeChangedReceiver
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            ReceiverManager.registerReceiver(mContext,
-                    new PowerSaveModeChangedReceiver(),
-                    new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED));
-        }
+        ReceiverManager.registerReceiver(mContext,
+                new PowerSaveModeChangedReceiver(),
+                new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED));
 
         // SyncStatusObserver to monitor android's "AutoSync" quick toggle.
         mSyncStatusObserverHandle = ContentResolver.addStatusChangeListener(
@@ -197,7 +195,8 @@ public class RunConditionMonitor {
                 ", lastSyncTimeSinceBootMillisecs=" + lastSyncTimeSinceBootMillisecs +
                 ", elapsedSecondsSinceLastSync=" + elapsedSecondsSinceLastSync
         );
-        JobUtils.scheduleSyncTriggerServiceJob(context,
+        JobUtils.scheduleSyncTriggerServiceJob(
+                context,
                 mTimeConditionMatch ?
                     Constants.TRIGGERED_SYNC_DURATION_SECS :
                        /**
@@ -205,7 +204,8 @@ public class RunConditionMonitor {
                         * mTimeConditionMatch is set to true during updateShouldRunDecision().
                         * Thus the false case cannot be triggered if the delay for scheduleSyncTriggerServiceJob would be negative
                         */
-                    Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS - elapsedSecondsSinceLastSync
+                    Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS - elapsedSecondsSinceLastSync,
+                !mTimeConditionMatch
         );
     }
 
@@ -278,18 +278,21 @@ public class RunConditionMonitor {
                 JobUtils.cancelAllScheduledJobs(context);
                 JobUtils.scheduleSyncTriggerServiceJob(
                         context,
-                        Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS
+                        Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS,
+                        true
                 );
                 return;
             }
 
+            // extraBeginActiveTimeWindow determines whether syncthing should start or stop
             if (extraBeginActiveTimeWindow) {
                 // We should immediately start SyncthingNative for TRIGGERED_SYNC_DURATION_SECS.
                 mTimeConditionMatch = true;
                 JobUtils.cancelAllScheduledJobs(context);
                 JobUtils.scheduleSyncTriggerServiceJob(
                         context,
-                        Constants.TRIGGERED_SYNC_DURATION_SECS
+                        Constants.TRIGGERED_SYNC_DURATION_SECS,
+                        false
                 );
                 mRunAllowedStopScheduled = true;
             } else {
@@ -297,25 +300,52 @@ public class RunConditionMonitor {
                  * Toggle the "digital input" for this condition as the condition change is
                  * triggered by a time schedule.
                  */
-                mTimeConditionMatch = !mTimeConditionMatch;
+                mTimeConditionMatch = false;
+                /**
+                 * If Syncthing is running and the last run was more than one hour ago,
+                 * this stop job might actually start Syncthing (resp. leave it running) because
+                 * mTimeConditionsMatch is switched to true if last run was more than 1 hour ago.
+                 * So in this case we put a new (fake) last run time slightly less than one hour ago.
+                 * If Syncthing really is stopped (which it should) then the wrong time gets
+                 * corrected immediately
+                 */
+                long lastRunTimeMillis = mPreferences.getLong(Constants.PREF_LAST_RUN_TIME, 0);
+                if (lastDeterminedShouldRun && SystemClock.elapsedRealtime() - lastRunTimeMillis > Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS * 1000) {
+                    SharedPreferences.Editor editor = mPreferences.edit();
+                    editor.putLong(Constants.PREF_LAST_RUN_TIME, SystemClock.elapsedRealtime() - Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS * 1000 + 60*1000);
+                    editor.apply();
+                }
             }
             updateShouldRunDecision();
 
             /**
              * Reschedule the job.
-             * If we are within a "SyncthingNative should run" time frame,
-             * let the receiver fire and change to "SyncthingNative shouldn't run" after
-             * TRIGGERED_SYNC_DURATION_SECS seconds elapsed.
              * If we are within a "SyncthingNative shouldn't run" time frame,
              * let the receiver fire and change to "SyncthingNative should run" after
              * WAIT_FOR_NEXT_SYNC_DELAY_SECS seconds elapsed.
+             * If we are within a "SyncthingNative should run" time frame,
+             * the change to "SyncthingNative shouldn't run" after
+             * TRIGGERED_SYNC_DURATION_SECS seconds elapsed should actually
+             * be scheduled inside updateShouldRunDecision(), but his might
+             * not always be the case: https://github.com/Catfriend1/syncthing-android/issues/803
+             * Thus we schedule an additional change to "SyncthingNative shouldn't run"
+             * after TRIGGERED_SYNC_DURATION_SECS seconds elapsed, but without
+             * cancelling other jobs. This should only serve as a backup job and
+             * will not fire if the job inside updateShouldRunDecision() is
+             * scheduled correctly.
              */
-            if (!mRunAllowedStopScheduled) {
+            if (!mRunAllowedStopScheduled && !lastDeterminedShouldRun) {
                 JobUtils.cancelAllScheduledJobs(context);
                 JobUtils.scheduleSyncTriggerServiceJob(
                         context,
-                        Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS
+                        Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS,
+                        true
                 );
+            } else {
+                JobUtils.scheduleSyncTriggerServiceJob(
+                        context,
+                        Constants.TRIGGERED_SYNC_DURATION_SECS,
+                        false);
             }
         }
     }
@@ -373,7 +403,8 @@ public class RunConditionMonitor {
                 JobUtils.cancelAllScheduledJobs(mContext);
                 JobUtils.scheduleSyncTriggerServiceJob(
                         mContext,
-                        Constants.TRIGGERED_SYNC_DURATION_SECS
+                        Constants.TRIGGERED_SYNC_DURATION_SECS,
+                        false
                 );
                 mRunAllowedStopScheduled = true;
             }
@@ -558,12 +589,10 @@ public class RunConditionMonitor {
         }
 
         // Power saving
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (prefRespectPowerSaving && isPowerSaving()) {
-                LogV("decideShouldRun: prefRespectPowerSaving && isPowerSaving");
-                mRunDecisionExplanation = res.getString(R.string.reason_not_while_power_saving);
-                return false;
-            }
+        if (prefRespectPowerSaving && isPowerSaving()) {
+            LogV("decideShouldRun: prefRespectPowerSaving && isPowerSaving");
+            mRunDecisionExplanation = res.getString(R.string.reason_not_while_power_saving);
+            return false;
         }
 
         // Android global AutoSync setting.

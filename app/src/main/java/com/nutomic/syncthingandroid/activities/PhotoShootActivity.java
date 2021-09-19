@@ -60,7 +60,7 @@ public class PhotoShootActivity extends AppCompatActivity {
         ((SyncthingApp) getApplication()).component().inject(this);
 
         // Check if required camera hardware is present.
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
             Toast.makeText(
                     PhotoShootActivity.this,
                     getString(R.string.photo_shoot_intro_no_camera), Toast.LENGTH_LONG
@@ -81,8 +81,7 @@ public class PhotoShootActivity extends AppCompatActivity {
         }
 
         // Make notification bar transparent (API level 21+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
-                Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
             getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         }
@@ -178,10 +177,6 @@ public class PhotoShootActivity extends AppCompatActivity {
         if (photoFile != null) {
             Uri photoURI = FileProvider.getUriForFile(this, getPackageName() + ".provider", photoFile);
             pictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP) {
-                pictureIntent.setClipData(ClipData.newRawUri("", photoURI));
-                pictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            }
 
             Log.d(TAG, "Launching take picture intent ...");
             lastPhotoURI = photoURI;

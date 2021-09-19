@@ -30,47 +30,11 @@ public class Device {
     public boolean paused = false;
     public List<IgnoredFolder> ignoredFolders;
 
+    // Since v1.12.0
+    // See https://github.com/syncthing/syncthing/pull/7055
+    public boolean untrusted = false;
+
     // private static final String TAG = "Device";
-
-    /**
-     * Those properties are not present in Syncthing's config.
-     * They are required by:
-     * - device edit dialog         {@link DeviceActivity}
-     * - devices tab                {@link DevicesAdapter}
-     */
-    private transient List<Folder> folders = new ArrayList<>();
-
-    public void addFolder(final Folder folder) {
-        folders.add(deepCopy(folder, new TypeToken<Folder>(){}.getType()));
-    }
-
-    public int getFolderCount() {
-        if (folders == null) {
-            return 0;
-        }
-        return folders.size();
-    }
-
-    public final Set<String> getFolderIDs() {
-        Set<String> folderIDs = new HashSet<>();
-        for (Folder folder : folders) {
-            folderIDs.add(folder.id);
-        }
-        return folderIDs;
-    }
-
-    public final List<Folder> getFolders() {
-        return folders;
-    }
-
-    public void removeFolder(final String folderId) {
-        for (Iterator<Folder> it = folders.iterator(); it.hasNext();) {
-            String currentId = it.next().id;
-            if (currentId.equals(folderId)) {
-                it.remove();
-            }
-        }
-    }
 
     /**
      * Relevant fields for Folder.List<Device> "shared-with-device" model,

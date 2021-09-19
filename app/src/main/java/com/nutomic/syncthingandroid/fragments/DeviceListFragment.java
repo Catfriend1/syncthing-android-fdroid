@@ -184,7 +184,7 @@ public class DeviceListFragment extends ListFragment implements SyncthingService
             mAdapter = new DevicesAdapter(activity);
             setListAdapter(mAdapter);
         }
-        mAdapter.setRestApi(restApi);
+        mAdapter.setRestApi(mConfigRouter, restApi);
 
         // Prevent scroll position reset due to list update from clear().
         mAdapter.setNotifyOnChange(false);
@@ -210,15 +210,13 @@ public class DeviceListFragment extends ListFragment implements SyncthingService
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.add_device:
-                Intent intent = new Intent(getActivity(), DeviceActivity.class)
-                        .putExtra(DeviceActivity.EXTRA_IS_CREATE, true);
-                startActivity(intent);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == R.id.add_device) {
+            Intent intent = new Intent(getActivity(), DeviceActivity.class)
+                    .putExtra(DeviceActivity.EXTRA_IS_CREATE, true);
+            startActivity(intent);
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     private void LogV(String logMessage) {

@@ -41,15 +41,13 @@ public abstract class SyncthingActivity extends ThemedAppCompatActivity implemen
             return;
         }
         toolbar.setNavigationContentDescription(R.string.main_menu);
-        toolbar.setNavigationIcon(R.drawable.btn_arrow_back);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            toolbar.setTouchscreenBlocksFocus(false);
-        }
+        toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_24);
+        toolbar.setTouchscreenBlocksFocus(false);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.btn_arrow_back);
+            actionBar.setHomeAsUpIndicator(R.drawable.baseline_arrow_back_24);
         }
     }
 

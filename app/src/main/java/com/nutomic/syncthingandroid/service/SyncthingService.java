@@ -121,10 +121,28 @@ public class SyncthingService extends Service {
             "com.github.catfriend1.syncthingandroid.SyncthingService.EXTRA_DEVICE_ID";
 
     /**
+     * Extra used together with ACTION_IGNORE_DEVICE
+     */
+    public static final String EXTRA_DEVICE_ADDRESS =
+            "com.github.catfriend1.syncthingandroid.SyncthingService.EXTRA_DEVICE_ADDRESS";
+
+    /**
+     * Extra used together with ACTION_IGNORE_DEVICE
+     */
+    public static final String EXTRA_DEVICE_NAME =
+            "com.github.catfriend1.syncthingandroid.SyncthingService.EXTRA_DEVICE_NAME";
+
+    /**
      * Extra used together with ACTION_IGNORE_FOLDER
      */
     public static final String EXTRA_FOLDER_ID =
             "com.github.catfriend1.syncthingandroid.SyncthingService.EXTRA_FOLDER_ID";
+
+    /**
+     * Extra used together with ACTION_IGNORE_FOLDER
+     */
+    public static final String EXTRA_FOLDER_LABEL =
+            "com.github.catfriend1.syncthingandroid.SyncthingService.EXTRA_FOLDER_LABEL";
 
     /**
      * Extra used together with ACTION_STOP.
@@ -356,10 +374,20 @@ public class SyncthingService extends Service {
                 mRunConditionMonitor.updateShouldRunDecision();
             }
         } else if (ACTION_IGNORE_DEVICE.equals(intent.getAction())) {
-            mConfigRouter.ignoreDevice(mRestApi, intent.getStringExtra(EXTRA_DEVICE_ID));
+            mConfigRouter.ignoreDevice(
+                    mRestApi,
+                    intent.getStringExtra(EXTRA_DEVICE_ID),
+                    intent.getStringExtra(EXTRA_DEVICE_NAME),
+                    intent.getStringExtra(EXTRA_DEVICE_ADDRESS)
+            );
             mNotificationHandler.cancelConsentNotification(intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0));
         } else if (ACTION_IGNORE_FOLDER.equals(intent.getAction())) {
-            mConfigRouter.ignoreFolder(mRestApi, intent.getStringExtra(EXTRA_DEVICE_ID), intent.getStringExtra(EXTRA_FOLDER_ID));
+            mConfigRouter.ignoreFolder(
+                    mRestApi,
+                    intent.getStringExtra(EXTRA_DEVICE_ID),
+                    intent.getStringExtra(EXTRA_FOLDER_ID),
+                    intent.getStringExtra(EXTRA_FOLDER_LABEL)
+            );
             mNotificationHandler.cancelConsentNotification(intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0));
         } else if (ACTION_OVERRIDE_CHANGES.equals(intent.getAction()) && mCurrentState == State.ACTIVE) {
             mRestApi.overrideChanges(intent.getStringExtra(EXTRA_FOLDER_ID));
@@ -960,10 +988,6 @@ public class SyncthingService extends Service {
                     for (Map.Entry<?, ?> e : sharedPrefsMap.entrySet()) {
                         String prefKey = (String) e.getKey();
                         switch (prefKey) {
-                            // Preferences we explicitly require the user to set again manually after a config import.
-                            case Constants.PREF_LAUNCHER_SHOW_CAMERA_ICON:
-                                LogV("importConfig: Explicitly ignoring pref \"" + prefKey + "\".");
-                                break;
                             // Preferences that are no longer used and left-overs from previous versions of the app.
                             case "first_start":
                             case "advanced_folder_picker":

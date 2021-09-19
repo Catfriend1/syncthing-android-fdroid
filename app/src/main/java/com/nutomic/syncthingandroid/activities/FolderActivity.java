@@ -38,6 +38,7 @@ import com.nutomic.syncthingandroid.SyncthingApp;
 import com.nutomic.syncthingandroid.model.Device;
 import com.nutomic.syncthingandroid.model.Folder;
 import com.nutomic.syncthingandroid.model.FolderIgnoreList;
+import com.nutomic.syncthingandroid.model.SharedWithDevice;
 import com.nutomic.syncthingandroid.service.Constants;
 import com.nutomic.syncthingandroid.service.RestApi;
 import com.nutomic.syncthingandroid.service.SyncthingService;
@@ -69,17 +70,21 @@ import static androidx.core.view.MarginLayoutParamsCompat.setMarginStart;
  * Shows folder details and allows changing them.
  */
 public class FolderActivity extends SyncthingActivity {
+    public static final String EXTRA_DEVICE_ID =
+            "com.github.catfriend1.syncthingandroid.activities.FolderActivity.DEVICE_ID";
 
-    public static final String EXTRA_NOTIFICATION_ID =
-            "com.github.catfriend1.syncthingandroid.activities.FolderActivity.NOTIFICATION_ID";
-    public static final String EXTRA_IS_CREATE =
-            "com.github.catfriend1.syncthingandroid.activities.FolderActivity.IS_CREATE";
     public static final String EXTRA_FOLDER_ID =
             "com.github.catfriend1.syncthingandroid.activities.FolderActivity.FOLDER_ID";
     public static final String EXTRA_FOLDER_LABEL =
             "com.github.catfriend1.syncthingandroid.activities.FolderActivity.FOLDER_LABEL";
-    public static final String EXTRA_DEVICE_ID =
-            "com.github.catfriend1.syncthingandroid.activities.FolderActivity.DEVICE_ID";
+    public static final String EXTRA_IS_CREATE =
+            "com.github.catfriend1.syncthingandroid.activities.FolderActivity.IS_CREATE";
+    public static final String EXTRA_NOTIFICATION_ID =
+            "com.github.catfriend1.syncthingandroid.activities.FolderActivity.NOTIFICATION_ID";
+    public static final String EXTRA_RECEIVE_ENCRYPTED =
+            "com.github.catfriend1.syncthingandroid.activities.FolderActivity.RECEIVE_ENCRYPTED";
+    public static final String EXTRA_REMOTE_ENCRYPTED =
+            "com.github.catfriend1.syncthingandroid.activities.FolderActivity.REMOTE_ENCRYPTED";
 
     private static final String TAG = "FolderActivity";
 
@@ -140,6 +145,26 @@ public class FolderActivity extends SyncthingActivity {
         public void afterTextChanged(Editable s) {
             mFolder.label        = mLabelView.getText().toString().trim();
             mFolder.id           = mIdView.getText().toString();
+
+            // Loop through devices the folder is shared to and update encryptionPassword property.
+            for (int i = 0; i < mDevicesContainer.getChildCount(); i++) {
+                if (mDevicesContainer.getChildAt(i) instanceof TextView) {
+                    continue;
+                }
+                LinearLayout deviceView = (LinearLayout) mDevicesContainer.getChildAt(i);
+
+                SwitchCompat switchView = (SwitchCompat) deviceView.getChildAt(0);
+                SharedWithDevice device = mFolder.getDevice(((SharedWithDevice) switchView.getTag()).deviceID);
+                if (device != null) {
+                    EditText encryptPassView = (EditText) deviceView.getChildAt(1);
+                    String newEncryptionPassword = encryptPassView.getText().toString();
+                    if (!device.encryptionPassword.equals(newEncryptionPassword)) {
+                        device.encryptionPassword = newEncryptionPassword;
+                        mFolderNeedsToUpdate = true;
+                    }
+                }
+            }
+
             // mPathView must not be handled here as it's handled by {@link onActivityResult}
             // mEditIgnoreListContent must not be handled here as it's written back when the dialog ends.
             mFolderNeedsToUpdate = true;
@@ -158,35 +183,42 @@ public class FolderActivity extends SyncthingActivity {
             new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton view, boolean isChecked) {
-            switch (view.getId()) {
-                case R.id.fileWatcher:
-                    mFolder.fsWatcherEnabled = isChecked;
-                    mFolderNeedsToUpdate = true;
-                    break;
-                case R.id.folderPause:
-                    mFolder.paused = isChecked;
-                    mFolderNeedsToUpdate = true;
-                    break;
-                case R.id.customSyncConditionsSwitch:
-                    mCustomSyncConditionsDescription.setEnabled(isChecked);
-                    mCustomSyncConditionsDialog.setFocusable(isChecked);
-                    mCustomSyncConditionsDialog.setEnabled(isChecked);
-                    // This is needed to display the "discard changes dialog".
-                    mFolderNeedsToUpdate = true;
-                    break;
-                case R.id.device_toggle:
-                    Device device = (Device) view.getTag();
-                    if (isChecked) {
-                        mFolder.addDevice(device);
-                    } else {
-                        mFolder.removeDevice(device.deviceID);
+            int id = view.getId();
+            if (id == R.id.fileWatcher) {
+                mFolder.fsWatcherEnabled = isChecked;
+                mFolderNeedsToUpdate = true;
+            } else if (id == R.id.folderPause) {
+                mFolder.paused = isChecked;
+                mFolderNeedsToUpdate = true;
+            } else if (id == R.id.customSyncConditionsSwitch) {
+                mCustomSyncConditionsDescription.setEnabled(isChecked);
+                mCustomSyncConditionsDialog.setFocusable(isChecked);
+                mCustomSyncConditionsDialog.setEnabled(isChecked);
+                // This is needed to display the "discard changes dialog".
+                mFolderNeedsToUpdate = true;
+            } else if (id == R.id.device_toggle) {
+                SharedWithDevice device = (SharedWithDevice) view.getTag();
+
+                // Loop through devices the folder is shared to and show/hide encryptionPassword UI.
+                for (int i = 0; i < mDevicesContainer.getChildCount(); i++) {
+                    LinearLayout deviceView = (LinearLayout) mDevicesContainer.getChildAt(i);
+                    SwitchCompat switchView = (SwitchCompat) deviceView.getChildAt(0);
+                    if (device == ((SharedWithDevice) switchView.getTag())) {
+                        EditText encryptPassView = (EditText) deviceView.getChildAt(1);
+                        encryptPassView.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+                        break;
                     }
-                    mFolderNeedsToUpdate = true;
-                    break;
-                case R.id.ignoreDelete:
-                    mFolder.ignoreDelete = isChecked;
-                    mFolderNeedsToUpdate = true;
-                    break;
+                }
+
+                if (isChecked) {
+                    mFolder.addDevice(device);
+                } else {
+                    mFolder.removeDevice(device.deviceID);
+                }
+                mFolderNeedsToUpdate = true;
+            } else if (id == R.id.ignoreDelete) {
+                mFolder.ignoreDelete = isChecked;
+                mFolderNeedsToUpdate = true;
             }
         }
     };
@@ -242,7 +274,8 @@ public class FolderActivity extends SyncthingActivity {
         mPathView.setOnClickListener(view -> onPathViewClick());
         mCustomSyncConditionsDialog.setOnClickListener(view -> onCustomSyncConditionsDialogClick());
 
-        findViewById(R.id.folderTypeContainer).setOnClickListener(v -> showFolderTypeDialog());
+        ViewGroup folderTypeContainer = findViewById(R.id.folderTypeContainer);
+        folderTypeContainer.setOnClickListener(v -> showFolderTypeDialog());
         mPullOrderContainer.setOnClickListener(v -> showPullOrderDialog());
         findViewById(R.id.versioningContainer).setOnClickListener(v -> showVersioningDialog());
 
@@ -284,7 +317,7 @@ public class FolderActivity extends SyncthingActivity {
 
             // If the extra is set, we should automatically share the current folder with the given device.
             if (getIntent().hasExtra(EXTRA_DEVICE_ID)) {
-                Device device = new Device();
+                SharedWithDevice device = new SharedWithDevice();
                 device.deviceID = getIntent().getStringExtra(EXTRA_DEVICE_ID);
                 mFolder.addDevice(device);
                 mFolderNeedsToUpdate = true;
@@ -302,6 +335,7 @@ public class FolderActivity extends SyncthingActivity {
             mPathView.setEnabled(false);
             mSelectAdvancedDirectory.setVisibility(View.GONE);
         }
+        folderTypeContainer.setEnabled(!mFolder.type.equals(Constants.FOLDER_TYPE_RECEIVE_ENCRYPTED));
         checkWriteAndUpdateUI();
         updateViewsAndSetListeners();
 
@@ -552,19 +586,18 @@ public class FolderActivity extends SyncthingActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.save:
-                onSave();
-                return true;
-            case R.id.remove:
-                showDeleteDialog();
-                return true;
-            case android.R.id.home:
-                onBackPressed();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        int itemId = item.getItemId();
+        if (itemId == R.id.save) {
+            onSave();
+            return true;
+        } else if (itemId == R.id.remove) {
+            showDeleteDialog();
+            return true;
+        } else if (itemId == android.R.id.home) {
+            onBackPressed();
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     private void showDeleteDialog(){
@@ -622,7 +655,14 @@ public class FolderActivity extends SyncthingActivity {
         } else if (resultCode == Activity.RESULT_OK && requestCode == FILE_VERSIONING_DIALOG_REQUEST) {
             updateVersioning(data.getExtras());
         } else if (resultCode == Activity.RESULT_OK && requestCode == FOLDER_TYPE_DIALOG_REQUEST) {
-            mFolder.type = data.getStringExtra(FolderTypeDialogActivity.EXTRA_RESULT_FOLDER_TYPE);
+            String newFolderType = data.getStringExtra(FolderTypeDialogActivity.EXTRA_RESULT_FOLDER_TYPE);
+            if (!mIsCreateMode && newFolderType.equals(Constants.FOLDER_TYPE_RECEIVE_ENCRYPTED)) {
+                // Disallow switching existing folder's type to receiveEncrypted.
+                // SyncthingNative also does this. Posting a wrong config will result in http code 500.
+                Toast.makeText(this, R.string.folder_type_switch_to_receive_encrypted_not_allowed, Toast.LENGTH_LONG).show();
+                return;
+            }
+            mFolder.type = newFolderType;
             updateFolderTypeDescription();
             mFolderNeedsToUpdate = true;
         } else if (resultCode == Activity.RESULT_OK && requestCode == PULL_ORDER_DIALOG_REQUEST) {
@@ -707,7 +747,11 @@ public class FolderActivity extends SyncthingActivity {
             mFolder.label = mFolder.label.trim();
         }
         mFolder.paused = false;
-        mFolder.type = Constants.FOLDER_TYPE_SEND_RECEIVE;      // Default for {@link #checkWriteAndUpdateUI}.
+        if (getIntent().getBooleanExtra(EXTRA_RECEIVE_ENCRYPTED, false)) {
+            mFolder.type = Constants.FOLDER_TYPE_RECEIVE_ENCRYPTED;
+        } else {
+            mFolder.type = Constants.FOLDER_TYPE_SEND_RECEIVE;      // Default for {@link #checkWriteAndUpdateUI}.
+        }
         mFolder.minDiskFree = new Folder.MinDiskFree();
         mFolder.versioning = new Folder.Versioning();
         mFolder.versioning.type = "trashcan";
@@ -732,13 +776,28 @@ public class FolderActivity extends SyncthingActivity {
     }
 
     private void addDeviceViewAndSetListener(Device device, LayoutInflater inflater) {
+        SharedWithDevice sharedWithDevice = new SharedWithDevice();
+        sharedWithDevice.deviceID = device.deviceID;
+        sharedWithDevice.introducedBy = device.introducedBy;
+
         inflater.inflate(R.layout.item_device_form, mDevicesContainer);
-        SwitchCompat deviceView = (SwitchCompat) mDevicesContainer.getChildAt(mDevicesContainer.getChildCount()-1);
-        deviceView.setOnCheckedChangeListener(null);
-        deviceView.setChecked(mFolder.getDevice(device.deviceID) != null);
-        deviceView.setText(device.getDisplayName());
-        deviceView.setTag(device);
-        deviceView.setOnCheckedChangeListener(mCheckedListener);
+        LinearLayout deviceView = (LinearLayout) mDevicesContainer.getChildAt(mDevicesContainer.getChildCount()-1);
+
+        SwitchCompat switchView = (SwitchCompat) deviceView.getChildAt(0);
+        switchView.setOnCheckedChangeListener(null);
+        switchView.setChecked(mFolder.getDevice(device.deviceID) != null);
+        switchView.setText(device.getDisplayName());
+        switchView.setTag(sharedWithDevice);
+        switchView.setOnCheckedChangeListener(mCheckedListener);
+
+        EditText encryptPassView = (EditText) deviceView.getChildAt(1);
+        encryptPassView.removeTextChangedListener(mTextWatcher);
+        if (mFolder.getDevice(device.deviceID) != null) {
+            encryptPassView.setText(mFolder.getDevice(device.deviceID).encryptionPassword);
+        } else {
+            encryptPassView.setVisibility(View.GONE);
+        }
+        encryptPassView.addTextChangedListener(mTextWatcher);
     }
 
     private void onSave() {
@@ -926,6 +985,10 @@ public class FolderActivity extends SyncthingActivity {
             case Constants.FOLDER_TYPE_RECEIVE_ONLY:
                 setFolderTypeDescription(getString(R.string.folder_type_receiveonly),
                         getString(R.string.folder_type_receiveonly_description));
+                break;
+            case Constants.FOLDER_TYPE_RECEIVE_ENCRYPTED:
+                setFolderTypeDescription(getString(R.string.folder_type_receive_encrypted),
+                        getString(R.string.folder_type_receive_encrypted_description));
                 break;
         }
 

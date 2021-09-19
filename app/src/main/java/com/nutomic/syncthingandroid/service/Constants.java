@@ -47,7 +47,6 @@ public class Constants {
 
     // Preferences - Behaviour
     public static final String PREF_USE_ROOT                        = "use_root";
-    public static final String PREF_LAUNCHER_SHOW_CAMERA_ICON       = "launcher_show_camera_icon";
 
     // Preferences - Troubleshooting
     public static final String PREF_VERBOSE_LOG                 = "verbose_log";
@@ -147,6 +146,7 @@ public class Constants {
     public static final String FOLDER_TYPE_SEND_ONLY            = "sendonly";
     public static final String FOLDER_TYPE_SEND_RECEIVE         = "sendreceive";
     public static final String FOLDER_TYPE_RECEIVE_ONLY         = "receiveonly";
+    public static final String FOLDER_TYPE_RECEIVE_ENCRYPTED    = "receiveencrypted";
 
     /**
      * Default listening ports.

@@ -7,8 +7,7 @@ import sys
 import platform
 #
 # Script Compatibility:
-# - Python 2.7.15
-# - Python 3.7.0
+# - Python 3.9.6
 #
 # Run script from command line with:
 #   python install_minimum_android_sdk_prerequisites.py
@@ -129,14 +128,9 @@ def install_sdk_tools():
     sdk_tools_bin_path = sdk_tools_latest_path + os.path.sep + 'bin'
     print('Adding to PATH:', sdk_tools_bin_path)
     os.environ["PATH"] += os.pathsep + sdk_tools_bin_path
+    os.environ["ANDROID_HOME"] = os.path.realpath(prerequisite_tools_dir)
+    os.environ["ANDROID_SDK_ROOT"] = os.path.realpath(prerequisite_tools_dir)
 
-    print('')
-    print('-------------------------------------------------------------------------')
-    print('Adding user env variable:')
-    print('SET ANDROID_HOME="' + os.path.realpath(prerequisite_tools_dir) + '"')
-    print('-------------------------------------------------------------------------')
-    print('')
-    subprocess.check_call([which('setx'), 'ANDROID_HOME', os.path.realpath(prerequisite_tools_dir)])
 
 
 #
@@ -166,7 +160,7 @@ print('sdk_manager_bin=\'' + sdk_manager_bin + '\'')
 if sys.platform == 'win32':
     subprocess.check_call([sdk_manager_bin, '--update'])
     powershell_bin = which('powershell')
-    subprocess.check_call([powershell_bin, 'for($i=0;$i -lt 31;$i++) { $response += \"y`n\"}; $response | sdkmanager --licenses'])
+    subprocess.check_call([powershell_bin, 'for($i=0;$i -lt 31;$i++) { $response += \"y`n\"}; $response | sdkmanager --licenses'], stdout=subprocess.DEVNULL)
     subprocess.check_call([sdk_manager_bin, 'platforms;android-30'])
     subprocess.check_call([sdk_manager_bin, 'build-tools;30.0.2'])
 

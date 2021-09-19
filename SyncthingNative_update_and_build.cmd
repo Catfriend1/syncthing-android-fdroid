@@ -13,19 +13,26 @@ SET DESIRED_SUBMODULE_VERSION=v1.18.2
 SET GRADLEW_PARAMS=-q
 REM
 REM Runtime Variables.
+IF NOT DEFINED ANDROID_SDK_ROOT SET "ANDROID_SDK_ROOT=%SCRIPT_PATH%..\syncthing-android-prereq"
 REM
+:checkPrerequisites
 echo [INFO] Checking prerequisites ...
 REM
 SET GIT_BIN=
 FOR /F "tokens=*" %%A IN ('where git 2^> NUL:') DO SET GIT_BIN="%%A"
-IF NOT DEFINED GIT_BIN echo [ERROR] git not found. Install "Git for Windows" first and put it to the PATH env var. & goto :eos
-IF NOT EXIST %GIT_BIN% echo [ERROR] git not found. Install "Git for Windows" first and put it to the PATH env var. & goto :eos
+IF NOT DEFINED GIT_BIN echo [ERROR] git not found. Install "Git for Windows" first and put it to the PATH env var. & pause & goto :checkPrerequisites
+IF NOT EXIST %GIT_BIN% echo [ERROR] git not found. Install "Git for Windows" first and put it to the PATH env var. & pause & goto :checkPrerequisites
 REM
-where /q sed
-IF NOT "%ERRORLEVEL%" == "0" echo [ERROR] sed.exe not found on PATH env var. & goto :eos
+where /q java
+IF NOT "%ERRORLEVEL%" == "0" SET PATH=%PATH%;%CommonProgramFiles%\Oracle\Java\javapath\
+where /q java
+IF NOT "%ERRORLEVEL%" == "0" echo [ERROR] java.exe not found on PATH env var. Download 'https://www.oracle.com/java/technologies/downloads/#java11-windows' and run the installer & pause & goto :checkPrerequisites
 REM
 where /q python
-IF NOT "%ERRORLEVEL%" == "0" echo [ERROR] python.exe not found on PATH env var. Download 'https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe' and run 'python-3.9.6-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0' & goto :eos
+IF NOT "%ERRORLEVEL%" == "0" echo [ERROR] python.exe not found on PATH env var. Download 'https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe' and run 'python-3.9.6-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0' & pause & goto :checkPrerequisites
+REM
+gradlew 2>&1 | find "ANDROID_SDK_ROOT" >NUL: && (echo [WARN] gradlew FAILED: Env var ANDROID_SDK_ROOT not set. Trying to run 'python install_minimum_android_sdk_prerequisites.py' ... & call python install_minimum_android_sdk_prerequisites.py)
+gradlew 2>&1 | find "ANDROID_SDK_ROOT" >NUL: && (echo [ERROR] gradlew FAILED: Env var ANDROID_SDK_ROOT not set, run 'python install_minimum_android_sdk_prerequisites.py' first. & pause & goto :checkPrerequisites)
 REM
 IF "%CLEAN_BEFORE_BUILD%" == "1" call :cleanBeforeBuild
 REM
@@ -62,7 +69,7 @@ echo [INFO] Building submodule syncthing_%DESIRED_SUBMODULE_VERSION% ...
 call gradlew %GRADLEW_PARAMS% buildNative
 SET RESULT=%ERRORLEVEL%
 IF "%USE_GO_DEV%" == "1" call :revertGoDev
-IF NOT "%RESULT%" == "0" echo [ERROR] gradlew buildNative FAILED. If you got ANDROID_SDK_MISSING error, run 'install_minimum_android_sdk_prerequisites.py' first. & goto :eos
+IF NOT "%RESULT%" == "0" echo [ERROR] gradlew buildNative FAILED. & goto :eos
 REM
 echo [INFO] Reverting "go.mod", "go.sum" to checkout state ...
 cd /d "%SCRIPT_PATH%syncthing\src\github.com\syncthing\syncthing"
@@ -95,8 +102,7 @@ REM Syntax:
 REM 	call :applyGoDev
 REM
 echo [INFO] Using go-dev instead of go-stable for this build ...
-sed -e "s/GO_EXPECTED_SHASUM_WINDOWS = '2f4849b512fffb2cf2028608aa066cc1b79e730fd146c7b89015797162f08ec5'/GO_EXPECTED_SHASUM_WINDOWS = '2fff556d0adaa6fda8300b0751a91a593c359f27265bc0fc7594f9eba794f907'/g" "syncthing\build-syncthing.py" > "%TEMP%\build-syncthing.py.tmp"
-move /y "%TEMP%\build-syncthing.py.tmp" "syncthing\build-syncthing.py" 1> NUL:
+type "syncthing\build-syncthing.py" 2> NUL: | psreplace "GO_EXPECTED_SHASUM_WINDOWS = '2f4849b512fffb2cf2028608aa066cc1b79e730fd146c7b89015797162f08ec5'" "GO_EXPECTED_SHASUM_WINDOWS = '2fff556d0adaa6fda8300b0751a91a593c359f27265bc0fc7594f9eba794f907'" "syncthing\build-syncthing.py"
 REM
 goto :eof
 

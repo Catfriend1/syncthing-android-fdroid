@@ -97,9 +97,11 @@ public abstract class ApiRequest {
      */
     void connect(int requestMethod, Uri uri, @Nullable String requestBody,
                  @Nullable OnSuccessListener listener, @Nullable OnErrorListener errorListener) {
+        /*
         if (ENABLE_VERBOSE_LOG) {
             Log.v(TAG, "Performing request to " + uri.toString());
         }
+        */
         StringRequest request = new StringRequest(requestMethod, uri.toString(), reply -> {
             if (listener != null) {
                 listener.onSuccess(reply);
@@ -108,7 +110,11 @@ public abstract class ApiRequest {
             if (errorListener != null) {
                 errorListener.onError(error);
             } else {
-                Log.w(TAG, "Request to " + uri + " failed, " + error.getMessage());
+                int statusCode = 0;
+                if (error.networkResponse != null) {
+                    statusCode = error.networkResponse.statusCode;
+                }
+                Log.w(TAG, "Request to " + uri + " failed, code=" + statusCode + ", msg=" + error.getMessage());
             }
         }) {
             @Override
