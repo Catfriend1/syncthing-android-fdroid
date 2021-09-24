@@ -18,8 +18,7 @@ echo [INFO] VERSION_NAME=[%VERSION_NAME%]
 echo [INFO] VERSION_CODE=[%VERSION_CODE%]
 REM 
 REM Write "versionName" and "versionCode" to "build.gradle".
-sed -e "s/\sversionCode .*/ versionCode %VERSION_CODE%/gI" -e "s/\sversionName .*/ versionName \"%VERSION_NAME%\"/gI" "%APP_BUILD_GRADLE%" > "%APP_BUILD_GRADLE%.tmp"
-move /y "%APP_BUILD_GRADLE%.tmp" "%APP_BUILD_GRADLE%"
+TYPE "%APP_BUILD_GRADLE%" 2>NUL: | psreplace "\sversionCode .*" " versionCode %VERSION_CODE%" | psreplace "\sversionName .*" " versionName `%VERSION_NAME%`" "%APP_BUILD_GRADLE%"
 REM 
 goto :eof
 
