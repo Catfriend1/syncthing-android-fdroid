@@ -7,7 +7,6 @@ title Syncthing-Fork - Update F-Droid Mirror Repo from main
 REM 
 REM Runtime Variables.
 SET APP_BUILD_GRADLE=%~dps0app\build.gradle
-where git 2> NUL: || call setenv.cmd
 REM 
 call :runGit fetch --all
 REM 
