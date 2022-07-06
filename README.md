@@ -14,7 +14,7 @@ A wrapper of [Syncthing](https://github.com/syncthing/syncthing) for Android. He
 
 # Major enhancements in this fork are:
 - Folder, device and overall sync progress can easily be read off the UI.
-- "Syncthing Camera" - an optional feature (with optional permission to use the camera) where you can take pictures with your friend, partner, ... on two phones into one shared and private Syncthing folder. No cloud involved.
+- "Syncthing Camera" - an optional feature (with optional permission to use the camera) where you can take pictures with your friend, partner, ... on two phones into one shared and private Syncthing folder. No cloud involved. (deprecated)
 - "Sync every hour" to save even more battery
 - Individual sync conditions can be applied per device and per folder (for expert users).
 - Recent changes UI, click to open files.
@@ -48,11 +48,11 @@ If you miss any prerequisite, the shell scripts will abort with an error and tel
 # This command will help you install the minimum Android SDK components to build this project in case you don't use Android Studio.
 python install_minimum_android_sdk_prerequisites.py
 ```
-- Android NDK r22b
+- Android NDK r24
 ```
 $ANDROID_NDK_HOME environment variable should point at the root directory of your NDK. If the variable is not set, build-syncthing.py will automatically try to download and setup the NDK.
 ```
-- Go 1.17.1
+- Go 1.18.1
 ```
 Make sure, Go is installed and available on the PATH environment variable. If Go is not found on the PATH environment variable, build-syncthing.py will automatically try to download and setup GO on the PATH.
 ```
@@ -79,8 +79,9 @@ A Linux VM, for example running Debian, is recommended to build this.
 
 Build SyncthingNative and the Syncthing-Android wrapper using the following commands:
 ```
-apt-get -y install git openjdk-11-jdk
+apt-get -y install git openjdk-11-jdk python
 mkdir -p /root/work
+cd /root/work
 git clone https://github.com/Catfriend1/syncthing-android.git --recursive
 cd /root/work/syncthing-android
 ./gradlew buildNative
