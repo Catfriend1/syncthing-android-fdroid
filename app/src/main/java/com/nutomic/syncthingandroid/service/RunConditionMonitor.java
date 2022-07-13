@@ -109,6 +109,8 @@ public class RunConditionMonitor {
     // Avoid re-scheduling start if run conditions change while already running.
     private Boolean mRunAllowedStopScheduled = false;
 
+    private int triggeredSyncDurationS = 10;
+
     @Inject
     SharedPreferences mPreferences;
 
@@ -198,7 +200,7 @@ public class RunConditionMonitor {
         JobUtils.scheduleSyncTriggerServiceJob(
                 context,
                 mTimeConditionMatch ?
-                    Constants.TRIGGERED_SYNC_DURATION_SECS :
+                    triggeredSyncDurationS :
                        /**
                         * if Constants.WAIT_FOR_NEXT_SYNC_DELAY_SECS - elapsedSecondsSinceLastSync is < 0,
                         * mTimeConditionMatch is set to true during updateShouldRunDecision().
@@ -292,7 +294,7 @@ public class RunConditionMonitor {
                 JobUtils.cancelAllScheduledJobs(context);
                 JobUtils.scheduleSyncTriggerServiceJob(
                         context,
-                        Constants.TRIGGERED_SYNC_DURATION_SECS,
+                        triggeredSyncDurationS,
                         false
                 );
                 mRunAllowedStopScheduled = true;
@@ -345,7 +347,7 @@ public class RunConditionMonitor {
             } else {
                 JobUtils.scheduleSyncTriggerServiceJob(
                         context,
-                        Constants.TRIGGERED_SYNC_DURATION_SECS,
+                        triggeredSyncDurationS,
                         false);
             }
         }
@@ -364,6 +366,10 @@ public class RunConditionMonitor {
      * We then need to decide if syncthing should run.
      */
     public void updateShouldRunDecision() {
+        if (!Constants.isRunningOnEmulator()) {
+            triggeredSyncDurationS = Integer.parseInt(mPreferences.getString(Constants.PREF_SYNC_DURATION_MINUTES, "5")) * 60;
+        }
+
         boolean newShouldRun = decideShouldRun();
         if (newShouldRun) {
             /**
@@ -404,7 +410,7 @@ public class RunConditionMonitor {
                 JobUtils.cancelAllScheduledJobs(mContext);
                 JobUtils.scheduleSyncTriggerServiceJob(
                         mContext,
-                        Constants.TRIGGERED_SYNC_DURATION_SECS,
+                        triggeredSyncDurationS,
                         false
                 );
                 mRunAllowedStopScheduled = true;
@@ -721,7 +727,7 @@ public class RunConditionMonitor {
     /**
      * Functions for run condition information retrieval.
      */
-    @TargetApi(17)
+    // @TargetApi(17)
     private boolean isCharging_API17() {
         Intent intent = mContext.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
@@ -730,7 +736,7 @@ public class RunConditionMonitor {
             plugged == BatteryManager.BATTERY_PLUGGED_WIRELESS;
     }
 
-    @TargetApi(21)
+    // @TargetApi(21)
     private boolean isPowerSaving() {
         PowerManager powerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
         if (powerManager == null) {

@@ -40,13 +40,14 @@ public class Constants {
     public static final String PREF_RESPECT_MASTER_SYNC         = "respect_master_sync";
     public static final String PREF_RUN_IN_FLIGHT_MODE          = "run_in_flight_mode";
     public static final String PREF_RUN_ON_TIME_SCHEDULE        = "run_on_time_schedule";
+    public static final String PREF_SYNC_DURATION_MINUTES       = "sync_duration_minutes";
 
     // Preferences - User Interface
-    public static final String PREF_APP_THEME                       = "app_theme";
-    public static final String PREF_EXPERT_MODE                     = "expert_mode";
+    public static final String PREF_APP_THEME                   = "app_theme";
+    public static final String PREF_EXPERT_MODE                 = "expert_mode";
 
     // Preferences - Behaviour
-    public static final String PREF_USE_ROOT                        = "use_root";
+    public static final String PREF_USE_ROOT                    = "use_root";
 
     // Preferences - Troubleshooting
     public static final String PREF_VERBOSE_LOG                 = "verbose_log";
@@ -177,7 +178,6 @@ public class Constants {
      * parameters are effective.
      */
     public static final int WAIT_FOR_NEXT_SYNC_DELAY_SECS       = isRunningOnEmulator() ? 20 : 3600;        // "off" state duration
-    public static final int TRIGGERED_SYNC_DURATION_SECS        = isRunningOnEmulator() ? 10 : 300;         // "on" state duration
 
     /**
      * Directory where config is exported to and imported from.
@@ -253,9 +253,13 @@ public class Constants {
     public static Boolean isRunningOnEmulator() {
         return !TextUtils.isEmpty(Build.MANUFACTURER) &&
                 !TextUtils.isEmpty(Build.MODEL) &&
-                Build.MANUFACTURER.equals("Google") && (
-                        Build.MODEL.equals("Android SDK built for x86") ||
-                        Build.MODEL.equals("sdk_gphone_x86_arm")
+                        (
+                            Build.MANUFACTURER.equals("Google") ||
+                            Build.MANUFACTURER.equals("unknown")
+                        ) && (
+                                Build.MODEL.equals("Android SDK built for x86") ||
+                                Build.MODEL.equals("sdk_gphone_x86_arm"
+                        )
                 );
     }
 
