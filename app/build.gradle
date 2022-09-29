@@ -33,9 +33,9 @@ def ourVersionCode = versionMajor * 1000000 + versionMinor * 10000 + versionPatc
 def ourVersionName = "${versionMajor}.${versionMinor}.${versionPatch}.${versionWrapper}"
 
 android {
-    compileSdkVersion 32
-    buildToolsVersion '32.0.0'
-    ndkVersion = '24.0.8215888'
+    compileSdkVersion 33
+    buildToolsVersion '33.0.0'
+    ndkVersion = '25.1.8937393'
 
     buildFeatures.dataBinding = true
 
@@ -93,7 +93,7 @@ android {
     }
 
     lintOptions {
-        disable "UnsafeExperimentalUsageError", "UnsafeExperimentalUsageWarning"
+        disable "UnsafeExperimentalUsageError", "UnsafeExperimentalUsageWarning", "ExpiringTargetSdkVersion"
         abortOnError true
     }
 

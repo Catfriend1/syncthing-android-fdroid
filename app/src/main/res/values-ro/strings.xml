@@ -869,11 +869,19 @@ Vă rugăm să raportați orice problemă întâlniți, prin intermediul GitHub.
     <!-- Strings representing units for file sizes, from smallest to largest -->
     <string-array name="file_size_units">
         <item>O</item>
+        <item>KiO</item>
+        <item>MiO</item>
+        <item>GiO</item>
+        <item>TiO</item>
     </string-array>
 
     <!-- Strings representing units for transfer rates, from smallest to largest -->
     <string-array name="transfer_rate_units">
         <item>O/s</item>
+        <item>KiO/s</item>
+        <item>MiO/s</item>
+        <item>GiO/s</item>
+        <item>TiO/s</item>
     </string-array>
 
     <!-- Possible folder states -->
