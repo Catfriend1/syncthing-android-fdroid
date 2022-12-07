@@ -35,8 +35,9 @@ def ourVersionName = "${versionMajor}.${versionMinor}.${versionPatch}.${versionW
 android {
     compileSdkVersion 33
     buildToolsVersion '33.0.0'
-    ndkVersion = '24.0.8215888'
+    ndkVersion = "${ndkVersionShared}"
 
+    namespace = 'com.nutomic.syncthingandroid'
     buildFeatures.dataBinding = true
 
     defaultConfig {
@@ -76,8 +77,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     bundle {

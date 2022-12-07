@@ -21,9 +21,9 @@ PLATFORM_DIRS = {
 FORCE_DISPLAY_SYNCTHING_VERSION = ''
 FILENAME_SYNCTHING_BINARY = 'libsyncthingnative.so'
 
-GO_VERSION = '1.19.1'
-GO_EXPECTED_SHASUM_LINUX = 'acc512fbab4f716a8f97a8b3fbaa9ddd39606a28be6c2515ef7c6c6311acffde'
-GO_EXPECTED_SHASUM_WINDOWS = 'b33584c1d93b0e9c783de876b7aa99d3018bdeccd396aeb6d516a74e9d88d55f'
+GO_VERSION = '1.19.4'
+GO_EXPECTED_SHASUM_LINUX = 'c9c08f783325c4cf840a94333159cc937f05f75d36a8b307951d5bd959cf2ab8'
+GO_EXPECTED_SHASUM_WINDOWS = 'ada490e188bfb57c7388da7c5eba7565390992b6496204d30e710d37755956b0'
 
 NDK_VERSION = 'r24'
 NDK_EXPECTED_SHASUM_LINUX = 'eceb18f147282eb93615eff1ad84a9d3962fbb31'
@@ -34,19 +34,19 @@ BUILD_TARGETS = [
         'arch': 'arm',
         'goarch': 'arm',
         'jni_dir': 'armeabi',
-        'clang': 'armv7a-linux-androideabi19-clang',
+        'cc': 'armv7a-linux-androideabi{}-clang',
     },
     {
         'arch': 'arm64',
         'goarch': 'arm64',
         'jni_dir': 'arm64-v8a',
-        'clang': 'aarch64-linux-android21-clang',
+        'cc': 'aarch64-linux-android{}-clang',
     },
     {
         'arch': 'x86',
         'goarch': '386',
         'jni_dir': 'x86',
-        'clang': 'i686-linux-android19-clang',
+        'cc': 'i686-linux-android{}-clang',
     }
 ]
 
@@ -297,6 +297,7 @@ module_dir = os.path.dirname(os.path.realpath(__file__))
 project_dir = os.path.realpath(os.path.join(module_dir, '..'))
 syncthing_dir = os.path.join(module_dir, 'src', 'github.com', 'syncthing', 'syncthing')
 prerequisite_tools_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + ".." + os.path.sep + ".." + os.path.sep + "syncthing-android-prereq"
+min_sdk = get_min_sdk(project_dir)
 
 # Check if git is available.
 git_bin = which("git");
@@ -360,14 +361,14 @@ for target in BUILD_TARGETS:
     print('')
     print('*** Building for', target['arch'])
 
-    ndk_clang_fullfn = os.path.join(
+    cc = os.path.join(
         os.environ['ANDROID_NDK_HOME'],
         'toolchains',
         'llvm',
         'prebuilt',
         PLATFORM_DIRS[platform.system()],
         'bin',
-        target['clang'],
+        target['cc'].format(min_sdk),
     )
 
     environ = os.environ.copy()
@@ -379,8 +380,9 @@ for target in BUILD_TARGETS:
 
     subprocess.check_call([go_bin, 'mod', 'download'], cwd=syncthing_dir)
     subprocess.check_call([
-                              go_bin, 'run', 'build.go', '-goos', 'android', '-goarch', target['goarch'],
-                              '-cc', ndk_clang_fullfn,
+                              go_bin, 'run', 'build.go', '-goos', 'android',
+                              '-goarch', target['goarch'],
+                              '-cc', cc,
                               '-version', syncthingVersion
                           ] + ['-no-upgrade', 'build'], env=environ, cwd=syncthing_dir)
 

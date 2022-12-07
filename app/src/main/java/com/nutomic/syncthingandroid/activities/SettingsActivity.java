@@ -176,6 +176,7 @@ public class SettingsActivity extends SyncthingActivity {
         /* Behaviour */
         private CheckBoxPreference mStartServiceOnBoot;
         private CheckBoxPreference mUseRoot;
+        private CheckBoxPreference mBindNetwork;
 
         /* Syncthing Options */
         private PreferenceScreen   mCategorySyncthingOptions;
@@ -310,6 +311,8 @@ public class SettingsActivity extends SyncthingActivity {
                     (CheckBoxPreference) findPreference(Constants.PREF_START_SERVICE_ON_BOOT);
             mUseRoot =
                     (CheckBoxPreference) findPreference(Constants.PREF_USE_ROOT);
+            mBindNetwork =
+                    (CheckBoxPreference) findPreference(Constants.PREF_BIND_NETWORK);
             setPreferenceCategoryChangeListener(categoryBehaviour, this::onBehaviourPreferenceChange);
 
             /* Syncthing Options */
@@ -577,7 +580,11 @@ public class SettingsActivity extends SyncthingActivity {
                     mRunOnRoaming.setEnabled((Boolean) o);
                     break;
                 case Constants.PREF_SYNC_DURATION_MINUTES:
-                    mSyncDurationMinutes.setSummary(getString(R.string.sync_duration_minutes_summary, o.toString()));
+                    String durationMinutes = o.toString();
+                    if (TextUtils.isEmpty(durationMinutes)) {
+                        return false;
+                    }
+                    preference.setSummary(getString(R.string.sync_duration_minutes_summary, durationMinutes));
                     break;
             }
             mPendingRunConditions = true;

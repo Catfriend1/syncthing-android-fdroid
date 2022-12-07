@@ -48,9 +48,11 @@ public class Constants {
 
     // Preferences - Behaviour
     public static final String PREF_USE_ROOT                    = "use_root";
+    public static final String PREF_BIND_NETWORK                = "bind_network";
 
     // Preferences - Troubleshooting
     public static final String PREF_VERBOSE_LOG                 = "verbose_log";
+    public static final String PREF_LOG_TO_FILE                 = "log_to_file";
     public static final String PREF_ENVIRONMENT_VARIABLES       = "environment_variables";
     public static final String PREF_DEBUG_FACILITIES_ENABLED    = "debug_facilities_enabled";
 

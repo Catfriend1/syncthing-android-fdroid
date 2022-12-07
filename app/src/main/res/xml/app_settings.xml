@@ -152,6 +152,14 @@
             android:singleLineTitle="false"
             android:defaultValue="false" />
 
+        <!-- Bind network -->
+        <CheckBoxPreference
+            android:key="bind_network"
+            android:title="@string/bind_network_title"
+            android:summary="@string/bind_network_summary"
+            android:singleLineTitle="false"
+            android:defaultValue="true" />
+
     </PreferenceScreen>
 
     <PreferenceScreen
@@ -304,6 +312,14 @@
             android:key="verbose_log"
             android:title="@string/verbose_log_title"
             android:summary="@string/verbose_log_summary"
+            android:singleLineTitle="false"
+            android:defaultValue="false" />
+
+        <!-- Verbose log -->
+        <CheckBoxPreference
+            android:key="log_to_file"
+            android:title="@string/log_to_file_title"
+            android:summary="@string/log_to_file_summary"
             android:singleLineTitle="false"
             android:defaultValue="false" />
 
