@@ -8,7 +8,6 @@ import android.content.res.Resources;
 import android.content.SharedPreferences;
 import android.Manifest;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -27,6 +26,7 @@ import com.nutomic.syncthingandroid.model.Folder;
 import com.nutomic.syncthingandroid.util.ConfigRouter;
 import com.nutomic.syncthingandroid.util.ConfigXml;
 import com.nutomic.syncthingandroid.util.FileUtils;
+import com.nutomic.syncthingandroid.util.PermissionUtil;
 import com.nutomic.syncthingandroid.util.Util;
 import com.nutomic.syncthingandroid.service.SyncthingRunnable.ExecutableNotFoundException;
 
@@ -258,10 +258,7 @@ public class SyncthingService extends Service {
          * see issue: https://github.com/syncthing/syncthing-android/issues/871
          * We need to recheck if we still have the storage permission.
          */
-        mStoragePermissionGranted = haveStoragePermission();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            mStoragePermissionGranted = mStoragePermissionGranted && haveAllFilesAccessPermission();
-        }
+        mStoragePermissionGranted = PermissionUtil.haveStoragePermission(this);
 
         if (mNotificationHandler != null) {
             mNotificationHandler.setAppShutdownInProgress(false);
@@ -852,6 +849,10 @@ public class SyncthingService extends Service {
                     new File(Constants.EXPORT_PATH_OBJ, Constants.PRIVATE_KEY_FILE));
             Files.copy(Constants.getPublicKeyFile(this),
                     new File(Constants.EXPORT_PATH_OBJ, Constants.PUBLIC_KEY_FILE));
+            Files.copy(Constants.getHttpsCertFile(this),
+                    new File(Constants.EXPORT_PATH_OBJ, Constants.HTTPS_CERT_FILE));
+            Files.copy(Constants.getHttpsKeyFile(this),
+                    new File(Constants.EXPORT_PATH_OBJ, Constants.HTTPS_KEY_FILE));
         } catch (IOException e) {
             Log.w(TAG, "Failed to export config", e);
             failSuccess = false;
@@ -952,12 +953,16 @@ public class SyncthingService extends Service {
             File config = new File(Constants.EXPORT_PATH_OBJ, Constants.CONFIG_FILE);
             File privateKey = new File(Constants.EXPORT_PATH_OBJ, Constants.PRIVATE_KEY_FILE);
             File publicKey = new File(Constants.EXPORT_PATH_OBJ, Constants.PUBLIC_KEY_FILE);
+            File httpsCert = new File(Constants.EXPORT_PATH_OBJ, Constants.HTTPS_CERT_FILE);
+            File httpsKey = new File(Constants.EXPORT_PATH_OBJ, Constants.HTTPS_KEY_FILE);
 
             // Check if necessary files for import are available.
             if (config.exists() && privateKey.exists() && publicKey.exists()) {
                 Files.copy(config, Constants.getConfigFile(this));
                 Files.copy(privateKey, Constants.getPrivateKeyFile(this));
                 Files.copy(publicKey, Constants.getPublicKeyFile(this));
+                Files.copy(httpsCert, Constants.getHttpsCertFile(this));
+                Files.copy(httpsKey, Constants.getHttpsKeyFile(this));
             } else {
                 Log.e(TAG, "importConfig: config, privateKey and/or publicKey files missing");
                 failSuccess = false;
@@ -1119,20 +1124,6 @@ public class SyncthingService extends Service {
             set.add(type.cast(o));
         }
         return set;
-    }
-
-    /**
-     * Permission check and request functions
-     */
-    @TargetApi(30)
-    private boolean haveAllFilesAccessPermission() {
-        return Environment.isExternalStorageManager();
-    }
-
-    private boolean haveStoragePermission() {
-        int permissionState = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        return permissionState == PackageManager.PERMISSION_GRANTED;
     }
 
     private void LogV(String logMessage) {
