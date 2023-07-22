@@ -131,6 +131,26 @@ public class ConfigXml {
             changed = changeLocalDeviceName(localDeviceID) || changed;
         }
 
+        // Change default folder section.
+        Element elementDefaults = (Element) mConfig.getDocumentElement()
+                .getElementsByTagName("defaults").item(0);
+        if (elementDefaults != null) {
+            Element elementDefaultFolder = (Element) elementDefaults
+                    .getElementsByTagName("folder").item(0);
+            if (elementDefaultFolder != null) {
+                Element elementVersioning = (Element) elementDefaultFolder.getElementsByTagName("versioning").item(0);
+                if (elementVersioning != null) {
+                    elementVersioning.setAttribute("type", "trashcan");
+                    Node nodeParam = mConfig.createElement("param");
+                    elementVersioning.appendChild(nodeParam);
+                    Element elementParam = (Element) nodeParam;
+                    elementParam.setAttribute("key", "cleanoutDays");
+                    elementParam.setAttribute("val", "14");
+                    changed = true;
+                }
+            }
+        }
+
         // Set default folder to the "camera" folder: path and name
         changed = changeDefaultFolder() || changed;
 
@@ -1152,9 +1172,15 @@ public class ConfigXml {
         folder.setAttribute("id", mContext.getString(R.string.default_folder_id, defaultFolderId));
         folder.setAttribute("path", Environment
                 .getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath());
-        folder.setAttribute("type", Constants.FOLDER_TYPE_SEND_ONLY);
+        folder.setAttribute("type", Constants.FOLDER_TYPE_SEND_RECEIVE);
         folder.setAttribute("fsWatcherEnabled", Boolean.toString(defaultFolder.fsWatcherEnabled));
         folder.setAttribute("fsWatcherDelayS", Integer.toString(defaultFolder.fsWatcherDelayS));
+
+        Element elementVersioning = (Element) folder.getElementsByTagName("versioning").item(0);
+        if (elementVersioning != null) {
+            elementVersioning.setAttribute("type", "trashcan");
+        }
+
         return true;
     }
 
