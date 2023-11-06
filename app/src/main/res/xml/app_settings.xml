@@ -105,6 +105,7 @@
             android:summary="@string/sync_duration_minutes_summary"
             android:singleLineTitle="false"
             android:inputType="number"
+            android:maxLength="9"
             android:defaultValue="5" />
 
     </PreferenceScreen>
@@ -239,6 +240,22 @@
             android:summary="@string/webui_remote_access_summary"
             android:singleLineTitle="false"
             android:persistent="false" />
+
+        <EditTextPreference
+            android:key="webui_username"
+            android:title="@string/webui_username_title"
+            android:singleLineTitle="false"
+            android:summary="@null"
+            android:persistent="false"
+            android:inputType="textNoSuggestions" />
+
+        <EditTextPreference
+            android:key="webui_password"
+            android:title="@string/webui_password_title"
+            android:singleLineTitle="false"
+            android:summary="@null"
+            android:persistent="true"
+            android:inputType="textNoSuggestions" />
 
         <Preference
             android:persistent="false"

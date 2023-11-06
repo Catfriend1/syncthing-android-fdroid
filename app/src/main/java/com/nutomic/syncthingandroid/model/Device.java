@@ -23,6 +23,7 @@ public class Device {
     public String deviceID;
     public String name = "";
     public List<String> addresses;
+    public List<String> allowedNetworks;
     public String compression = "metadata";
     public String certName;
     public String introducedBy = "";
@@ -34,6 +35,9 @@ public class Device {
     // Since v1.12.0
     // See https://github.com/syncthing/syncthing/pull/7055
     public boolean untrusted = false;
+
+    // Since v1.25.0
+    public Integer numConnections = 0;
 
     private static final String TAG = "Device";
 

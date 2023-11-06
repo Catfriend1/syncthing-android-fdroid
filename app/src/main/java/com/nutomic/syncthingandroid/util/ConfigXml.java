@@ -154,6 +154,21 @@ public class ConfigXml {
         // Set default folder to the "camera" folder: path and name
         changed = changeDefaultFolder() || changed;
 
+        /* Section - GUI */
+        Element gui = getGuiElement();
+        if (gui == null) {
+            throw new OpenConfigException();
+        }
+
+        // Set user to "syncthing"
+        changed = setConfigElement(gui, "user", "syncthing") || changed;
+
+        // Initialiaze password to the API key
+        changed = setConfigElement(gui, "password",  BCrypt.hashpw(getApiKey(), BCrypt.gensalt(4))) || changed;
+        PreferenceManager.getDefaultSharedPreferences(mContext).edit()
+                .putString(Constants.PREF_WEBUI_PASSWORD, getApiKey())
+                .apply();
+
         // Save changes if we made any.
         if (changed) {
             saveChanges();
@@ -242,8 +257,12 @@ public class ConfigXml {
         return getGuiElement().getElementsByTagName("apikey").item(0).getTextContent();
     }
 
-    public String getUserName() {
+    public String getWebUIUsername() {
         return getGuiElement().getElementsByTagName("user").item(0).getTextContent();
+    }
+
+    public String getWebUIPassword() {
+        return PreferenceManager.getDefaultSharedPreferences(mContext).getString(Constants.PREF_WEBUI_PASSWORD, "");
     }
 
     /**
@@ -291,30 +310,6 @@ public class ConfigXml {
             changed = true;
         }
 
-        // Set user to "syncthing"
-        changed = setConfigElement(gui, "user", "syncthing") || changed;
-
-        // Set password to the API key
-        Node password = gui.getElementsByTagName("password").item(0);
-        if (password == null) {
-            password = mConfig.createElement("password");
-            gui.appendChild(password);
-        }
-        String apikey = getApiKey();
-        String pw = password.getTextContent();
-        boolean passwordOk;
-        try {
-            passwordOk = !TextUtils.isEmpty(pw) && BCrypt.checkpw(apikey, pw);
-        } catch (IllegalArgumentException e) {
-            Log.w(TAG, "Malformed password", e);
-            passwordOk = false;
-        }
-        if (!passwordOk) {
-            Log.i(TAG, "Updating password");
-            password.setTextContent(BCrypt.hashpw(apikey, BCrypt.gensalt(4)));
-            changed = true;
-        }
-
         /* Section - options */
         Element options = (Element) mConfig.getDocumentElement()
                 .getElementsByTagName("options").item(0);
@@ -327,12 +322,13 @@ public class ConfigXml {
         for (int i = 0; i < childNodes.getLength(); i++) {
             Node node = childNodes.item(i);
             if (node.getNodeName().equals("unackedNotificationID")) {
-                switch (getContentOrDefault(node, "")) {
+                String notificationType = getContentOrDefault(node, "");
+                switch (notificationType) {
                     case "authenticationUserAndPassword":
                     case "crAutoEnabled":
                     case "crAutoDisabled":
                     case "fsWatcherNotification":
-                        Log.i(TAG, "Remove found unackedNotificationID '" + node + "'.");
+                        Log.i(TAG, "Remove found unackedNotificationID '" + notificationType + "'.");
                         options.removeChild(node);
                         changed = true;
                         break;
@@ -800,6 +796,7 @@ public class ConfigXml {
             device.autoAcceptFolders = getContentOrDefault(r.getElementsByTagName("autoAcceptFolders").item(0), device.autoAcceptFolders);
             device.paused = getContentOrDefault(r.getElementsByTagName("paused").item(0), device.paused);
             device.untrusted = getContentOrDefault(r.getElementsByTagName("untrusted").item(0), device.untrusted);
+            device.numConnections = getContentOrDefault(r.getElementsByTagName("numConnections").item(0), device.numConnections);
 
             // Addresses
             /*
@@ -814,6 +811,21 @@ public class ConfigXml {
                 String address = getContentOrDefault(nodeAddresses.item(j), "");
                 device.addresses.add(address);
                 // LogV("getDevices: address=" + address);
+            }
+
+            // Allowed Networks
+            /*
+            <device ...>
+                <allowedNetwork>192.168.0.0/24</allowedNetwork>
+                <allowedNetwork>192.168.1.0/24</allowedNetwork>
+            </device>
+            */
+            device.allowedNetworks = new ArrayList<>();
+            NodeList nodeAllowedNetworks = r.getElementsByTagName("allowedNetwork");
+            for (int j = 0; j < nodeAllowedNetworks.getLength(); j++) {
+                String allowedNetwork = getContentOrDefault(nodeAllowedNetworks.item(j), "");
+                device.allowedNetworks.add(allowedNetwork);
+                // LogV("getDevices: allowedNetwork=" + allowedNetwork);
             }
 
             // ignoredFolders
@@ -889,6 +901,7 @@ public class ConfigXml {
                     setConfigElement(r, "autoAcceptFolders", Boolean.toString(device.autoAcceptFolders));
                     setConfigElement(r, "paused", Boolean.toString(device.paused));
                     setConfigElement(r, "untrusted", Boolean.toString(device.untrusted));
+                    setConfigElement(r, "numConnections", Integer.toString(device.numConnections));
 
                     // Addresses
                     // Pass 1: Remove all addresses in XML.
@@ -907,6 +920,26 @@ public class ConfigXml {
                             r.appendChild(nodeAddress);
                             Element elementAddress = (Element) nodeAddress;
                             elementAddress.setTextContent(address);
+                        }
+                    }
+
+                    // Allowed Networks
+                    // Pass 1: Remove all allowed networks in XML.
+                    NodeList nodeAllowedNetworks = r.getElementsByTagName("allowedNetwork");
+                    for (int j = nodeAllowedNetworks.getLength() - 1; j >= 0; j--) {
+                        Element elementAllowedNetwork = (Element) nodeAllowedNetworks.item(j);
+                        Log.d(TAG, "updateDevice: nodeAllowedNetworks: Removing allowedNetwork=" + getContentOrDefault(elementAllowedNetwork, ""));
+                        removeChildElementFromTextNode(r, elementAllowedNetwork);
+                    }
+
+                    // Pass 2: Add allowed networks from the POJO model.
+                    if (device.allowedNetworks != null) {
+                        for (String allowedNetwork : device.allowedNetworks) {
+                            Log.d(TAG, "updateDevice: nodeAllowedNetworks: Adding allowedNetwork=" + allowedNetwork);
+                            Node nodeAllowedNetwork = mConfig.createElement("allowedNetwork");
+                            r.appendChild(nodeAllowedNetwork);
+                            Element elementAllowedNetwork = (Element) nodeAllowedNetwork;
+                            elementAllowedNetwork.setTextContent(allowedNetwork);
                         }
                     }
 
