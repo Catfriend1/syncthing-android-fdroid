@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE resources [
-<!ENTITY folder_ignore_delete_docs_url "https://docs.syncthing.net/advanced/folder-ignoredelete.html">
-]>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Syncthing-Fork</string>
     <string name="app_description">Eine offene, vertrauenswürdige und dezentralisierte Anwendung zur Dateisynchronisation.</string>
@@ -17,7 +14,7 @@
     <!-- Slide "Storage Permission" -->
     <string name="storage_permission_title">Speicher-Berechtigung</string>
     <string name="storage_permission_desc">Syncthing muss auf den Speicher zugreifen können, um Dateien zu synchronisieren.</string>
-    <string name="dialog_all_files_access_not_supported">Dein Gerät unterstützt den vollwertigen Dateizugriff nicht</string>
+    <string name="dialog_all_files_access_not_supported">Das Gerät unterstützt keinen uneingeschränkten Dateizugriff</string>
     <!-- Slide "Ignore battery optimizations" -->
     <string name="ignore_doze_permission_title">Akku-Optimierung</string>
     <string name="ignore_doze_permission_os_notice">Es ist bekannt, dass Android TV\'s die App gelegentlich beenden, wenn sie im Hintergrund ausgeführt wird. Eine Lösung ist im Wiki unter \'%1$s/%2$s\' verfügbar.</string>
@@ -180,7 +177,7 @@
     <string name="folder_fileWatcherDescription">Fordert das Betriebssystem auf, über Änderungen an Dateien zu informieren. Falls deaktiviert erfolgt stattdessen stündliches Scannen.</string>
     <!-- Setting title and description -->
     <string name="folder_ignore_delete_caption">Löschen ignorieren</string>
-    <string name="folder_ignore_delete_description">Expertenoption, die sich auf die Verarbeitung eingehender Indexaktualisierungen auswirkt. Wenn festgelegt, werden eingehende Aktualisierungen mit dem Löschkennzeichen ignoriert. Siehe &folder_ignore_delete_docs_url;</string>
+    <string name="folder_ignore_delete_description">Expertenoption, die sich auf die Verarbeitung eingehender Indexaktualisierungen auswirkt. Wenn festgelegt, werden eingehende Aktualisierungen mit dem Löschkennzeichen ignoriert. Siehe https://docs.syncthing.net/advanced/folder-ignoredelete.html</string>
     <!-- Setting title -->
     <string name="folder_pause">Ordner pausieren</string>
     <!-- Setting title -->
@@ -232,11 +229,9 @@
     <!-- Setting title -->
     <string name="compression">Datenkomprimierung</string>
     <!-- Strings representing compression options -->
-    <string-array name="compress_entries">
-        <item>Nie</item>
-        <item>Metadaten</item>
-        <item>Immer</item>
-    </string-array>
+    <string name="compress_never">Nie</string>
+    <string name="compress_metadata">Metadaten</string>
+    <string name="compress_always">Immer</string>
     <!-- Setting title -->
     <string name="introducer">Verteilergerät</string>
     <!-- Setting title -->
@@ -349,13 +344,11 @@
     <string name="sync_only_wifi_ssids_wifi_turn_on_location">Bitte schalte den Standort ein, um Netzwerke zu wählen.</string>
     <string name="sync_only_wifi_ssids_need_to_grant_location_permission">Bitte gewähre die Standort-Berechtigung, um diese Funktion nutzen zu können.</string>
     <string name="sync_only_wifi_ssids_location_permission_rejected_dialog_title">Berechtigung benötigt</string>
-    <string name="sync_only_wifi_ssids_location_permission_rejected_dialog_content">Mit Android 8.1 beginnend wird der Standortzugriff dazu benötigt, den WLAN-Namen zu ermitteln. Daher kann diese Funktion nur genutzt werden, wenn diese Berechtigung erteilt wird.</string>
+    <string name="sync_only_wifi_ssids_location_permission_rejected_dialog_content">Ab Android 8.1 ist der Standortzugriff erforderlich, um WLAN-Namen ermitteln zu können. Daher kann diese Funktion nur genutzt werden, wenn diese Berechtigung erteilt wird.</string>
     <string name="power_source_title">Starte, wenn Gerät betrieben per</string>
-    <string-array name="power_source_entries">
-        <item>Ladegerät und Akku</item>
-        <item>Ladegerät</item>
-        <item>Akku</item>
-    </string-array>
+    <string name="power_source_ac_and_battery_power">Ladegerät und Akku</string>
+    <string name="power_source_ac_power">Ladegerät</string>
+    <string name="power_source_battery_power">Akku</string>
     <string name="respect_battery_saving_title">Berücksichtige Android Energiesparmodus</string>
     <string name="respect_battery_saving_summary">Stoppe Syncthing während der Energiesparmodus aktiv ist.</string>
     <string name="respect_master_sync_title">Berücksichtige \"Autom. Datensynchronisierung\"</string>
@@ -378,27 +371,20 @@
     <string name="preference_language_title">Sprache</string>
     <string name="preference_language_summary">Anwendungssprache ändern</string>
     <string name="pref_language_default">Standardsprache</string>
-    <string-array name="folder_types">
-        <item>Senden &amp; Empfangen</item>
-        <item>Nur Senden</item>
-        <item>Nur Empfangen</item>
-        <item>Empfange verschlüsselt</item>
-    </string-array>
-    <string-array name="pull_order_types">
-        <item>Zufall</item>
-        <item>Alphabetisch</item>
-        <item>Kleinstes zuerst</item>
-        <item>Größtes zuerst</item>
-        <item>Älteste zuerst</item>
-        <item>Neueste zuerst</item>
-    </string-array>
-    <string-array name="versioning_types">
-        <item>Keine</item>
-        <item>Papierkorb</item>
-        <item>Einfach</item>
-        <item>Gestaffelt</item>
-        <item>Extern</item>
-    </string-array>
+    <string name="folder_type_send_receive">Senden &amp; Empfangen</string>
+    <string name="folder_type_send_only">Nur Senden</string>
+    <string name="folder_type_receive_only">Nur Empfangen</string>
+    <string name="pull_order_random">Zufall</string>
+    <string name="pull_order_alphabetic">Alphabetisch</string>
+    <string name="pull_order_smallest_first">Kleinstes zuerst</string>
+    <string name="pull_order_largest_first">Größtes zuerst</string>
+    <string name="pull_order_oldest_first">Älteste zuerst</string>
+    <string name="pull_order_newest_first">Neueste zuerst</string>
+    <string name="versioning_type_none">Keine</string>
+    <string name="versioning_type_trashcan">Papierkorb</string>
+    <string name="versioning_type_simple">Einfach</string>
+    <string name="versioning_type_staggered">Gestaffelt</string>
+    <string name="versioning_type_external">Extern</string>
     <string name="device_name">Gerätename</string>
     <string name="listen_address">Adresse(n) für das Synchronisierungsprotokoll</string>
     <string name="max_recv_kbps">Eingehende Datenrate Limite (KiB/s)</string>
@@ -650,21 +636,17 @@
     <!-- Shown when a device ID is copied to the clipboard -->
     <string name="device_id_copied_to_clipboard">Geräte-ID in die Zwischenablage kopiert</string>
     <!-- Strings representing units for file sizes, from smallest to largest -->
-    <string-array name="file_size_units">
-        <item>B</item>
-        <item>KB</item>
-        <item>MB</item>
-        <item>GB</item>
-        <item>TB</item>
-    </string-array>
+    <string name="file_size_unit_B">B</string>
+    <string name="file_size_unit_KiB">KB</string>
+    <string name="file_size_unit_MiB">MB</string>
+    <string name="file_size_unit_GiB">GB</string>
+    <string name="file_size_unit_TiB">TB</string>
     <!-- Strings representing units for transfer rates, from smallest to largest -->
-    <string-array name="transfer_rate_units">
-        <item>B/s</item>
-        <item>KB/s</item>
-        <item>MB/s</item>
-        <item>GB/s</item>
-        <item>TB/s</item>
-    </string-array>
+    <string name="transfer_rate_unit_B_s">B/s</string>
+    <string name="transfer_rate_unit_KiB_s">KB/s</string>
+    <string name="transfer_rate_unit_MiB_s">MB/s</string>
+    <string name="transfer_rate_unit_GiB_s">GB/s</string>
+    <string name="transfer_rate_unit_TiB_s">TB/s</string>
     <!-- Possible folder states -->
     <string name="state_failed_items">Fehlgeschlagene Elemente (%1$d)</string>
     <string name="state_up_to_date">Aktuell</string>
@@ -731,7 +713,7 @@
 \nEs wird in folgenden Abständen versioniert: In der ersten Stunde wird alle 30 Sekunden eine Version behalten, am ersten Tag eine jede Stunde, in den ersten 30 Tagen eine jeden Tag. Danach wird bis zum angegebenen Höchstalter eine Version pro Woche behalten.</string>
     <string name="maximum_age_description">Die längste Zeit, die alte Versionen vorgehalten werden (in Tagen, 0 um alte Versionen für immer zu behalten).</string>
     <string name="versions_path_description">Pfad, in dem Versionen gespeichert werden sollen (leer lassen, wenn das Standard-.stversions-Verzeichnis im geteilten Ordner verwendet werden soll).</string>
-    <string name="cleanout_after_description">Dauer in Tagen für welche die Dateien aufgehoben werden sollen. 0 bedeutet für immer.</string>
+    <string name="cleanout_after_description">Anzahl der Tage, die Dateien im Papierkorb belassen werden. 0 bedeutet für immer</string>
     <string name="external_versioning_description">Der erste Kommandozeilenparameter ist der Ordnerpfad und der zweite Parameter ist der relative Pfad innerhalb des Ordners</string>
     <string name="no_versioning_description">Dateiversionierungstyp auswählen um Dateiversionierung zu aktivieren.</string>
     <!-- Displays the current file versioning type in the Folder activity -->
@@ -762,4 +744,13 @@
     <string name="qs_following_run_conditions">Befolgt Laufkonditionen</string>
     <string name="qs_schedule_label">Laufe 5 Minuten lang</string>
     <string name="qs_schedule_disabled">Zeitplan deaktiviert</string>
+    <string name="webui_username_title">Web UI Benutzername</string>
+    <string name="dialog_confirm_skip_ignore_doze_permission">Vorsicht: Wenn SyncthingNative unterbrochen wird und etwas Seltsames tut, sind Sie schuld. Überspringen Sie den Vorgang nur, wenn Ihr Gerät die Erteilung der Berechtigung nicht unterstützt. Wirklich überspringen?</string>
+    <string name="autoAcceptFolders">Automatische Annahme</string>
+    <string name="webui_password_title">Web UI Passwort</string>
+    <string name="backup_folder_name">Backup Ordnername</string>
+    <string name="notification_permission_desc">Erforderlich, um Benachrichtigungen über neue Geräteverbindungs- und Ordnerfreigabeanfragen anzuzeigen sowie den Dienst aktiv und verbunden zu halten.</string>
+    <string name="qs_schedule_label_minutes" tools:ignore="PluralsCandidate">Laufe für %1$d Minuten</string>
+    <string name="notification_permission_title">Benachrichtigungsrecht</string>
+    <string name="toast_notification_permission_required">Syncthing benötigt das Benachrichtigungsrecht, um seinen Dienst aufrecht und verbunden zu halten.</string>
 </resources>

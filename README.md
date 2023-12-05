@@ -4,7 +4,6 @@
 <a href="https://github.com/Catfriend1/syncthing-android/releases" alt="GitHub release"><img src="https://img.shields.io/github/release/Catfriend1/syncthing-android/all.svg" /></a>
 <a href="https://f-droid.org/packages/com.github.catfriend1.syncthingandroid" alt="F-Droid release"><img src="https://img.shields.io/f-droid/v/com.github.catfriend1.syncthingandroid.svg" /></a>
 <a href="https://tooomm.github.io/github-release-stats/?username=Catfriend1&repository=syncthing-android" alt="GitHub Stats"><img src="https://img.shields.io/github/downloads/Catfriend1/syncthing-android/total.svg" /></a>
-<a href="https://www.youtube.com/watch?v=rYHQzqSjKWQ" alt="Tutorial: Youtube-Video"><img src="https://img.shields.io/badge/Tutorial-Youtube--Video-blueviolet" /></a>
 <a href="https://hosted.weblate.org/projects/syncthing/android/catfriend1/"><img src="https://hosted.weblate.org/widget/syncthing/android/catfriend1/svg-badge.svg" alt="Translation status" /></a>
 
 A wrapper of [Syncthing](https://github.com/syncthing/syncthing) for Android. Head to the "releases" section or F-Droid for builds. Please open an issue under this fork if you need help. Important: Please don't file bugs at the upstream repository "syncthing-android" if you are using this fork.
@@ -26,7 +25,6 @@ A wrapper of [Syncthing](https://github.com/syncthing/syncthing) for Android. He
 
 # About Play Store releases:
 - Planning to close my Google Play Developer Account. Please say hi if you are interested in obtaining the latest gplay release files from me to help in publishing this app.
-- Syncthing-Fork releases on GPlay may - from time to time - not provide the full feature set of this app or just be outdated. This is caused by the store policies and has happened some times in the past. If you still like to download from there, here's the link: https://play.google.com/store/apps/details?id=com.github.catfriend1.syncthingandroid
 
 # Privacy Policy
 See our document on privacy: [privacy-policy.md](https://github.com/Catfriend1/syncthing-android/blob/main/privacy-policy.md).
@@ -48,11 +46,11 @@ If you miss any prerequisite, the shell scripts will abort with an error and tel
 # This command will help you install the minimum Android SDK components to build this project in case you don't use Android Studio.
 python install_minimum_android_sdk_prerequisites.py
 ```
-- Android NDK r24
+- Android NDK r26b
 ```
 $ANDROID_NDK_HOME environment variable should point at the root directory of your NDK. If the variable is not set, build-syncthing.py will automatically try to download and setup the NDK.
 ```
-- Go 1.18.1
+- Go 1.21.4
 ```
 Make sure, Go is installed and available on the PATH environment variable. If Go is not found on the PATH environment variable, build-syncthing.py will automatically try to download and setup GO on the PATH.
 ```
@@ -64,9 +62,9 @@ Make sure, Python is installed and available on the PATH environment variable. D
 ```
 Make sure, git (or git.exe) is installed and available on the PATH environment variable. If Git is not found on the PATH environment variable, build-syncthing.py will automatically try to download and setup MinGit 2.19.0-x64 on the PATH.
 ```
-- Java Development Version 11
+- Java Development Version 17
 ```
-"java" should be on the PATH environment variable. Download 'jdk-11.0.11_windows-x64_bin.exe' from Oracle and run the installer. Log off and back on to let the new PATH variable take effect.
+"java" should be on the PATH environment variable. Download from Oracle and run the installer. Log off and back on to let the new PATH variable take effect.
 ```
 
 ## Build instructions

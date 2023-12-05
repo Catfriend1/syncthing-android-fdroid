@@ -8,8 +8,7 @@ REM
 REM Script Consts.
 SET CLEAN_BEFORE_BUILD=1
 SET SKIP_CHECKOUT_SRC=0
-SET USE_GO_DEV=0
-SET DESIRED_SUBMODULE_VERSION=v1.26.1
+SET DESIRED_SUBMODULE_VERSION=
 SET GRADLEW_PARAMS=-q
 REM
 REM Runtime Variables.
@@ -57,20 +56,20 @@ git fetch --quiet --all
 SET RESULT=%ERRORLEVEL%
 IF NOT "%RESULT%" == "0" echo [ERROR] git fetch FAILED. & goto :eos
 REM
-echo [INFO] Checking out syncthing_%DESIRED_SUBMODULE_VERSION% ...
-git checkout %DESIRED_SUBMODULE_VERSION% 2>&1 | find /i "HEAD is now at"
+echo [INFO] Reading required SyncthingNative from versions.gradle ...
+IF NOT DEFINED SYNCTHING_NATIVE_REQUIRED_VERSION call :getRequiredSynchtingNativeVersion
+REM
+echo [INFO] Checking out syncthing_%SYNCTHING_NATIVE_REQUIRED_VERSION% ...
+git checkout %SYNCTHING_NATIVE_REQUIRED_VERSION% 2>&1 | find /i "HEAD is now at"
 SET RESULT=%ERRORLEVEL%
 IF NOT "%RESULT%" == "0" echo [ERROR] git checkout FAILED. & goto :eos
 REM
 :afterCheckoutSrc
 cd /d "%SCRIPT_PATH%"
 REM
-IF "%USE_GO_DEV%" == "1" call :applyGoDev
-REM
-echo [INFO] Building submodule syncthing_%DESIRED_SUBMODULE_VERSION% ...
+echo [INFO] Building submodule syncthing_%SYNCTHING_NATIVE_REQUIRED_VERSION% ...
 call gradlew %GRADLEW_PARAMS% buildNative
 SET RESULT=%ERRORLEVEL%
-IF "%USE_GO_DEV%" == "1" call :revertGoDev
 IF NOT "%RESULT%" == "0" echo [ERROR] gradlew buildNative FAILED. & goto :eos
 REM
 echo [INFO] Reverting "go.mod", "go.sum" to checkout state ...
@@ -87,6 +86,7 @@ IF NOT "%LIBCOUNT%" == "4" echo [ERROR] SyncthingNative[s] "libsyncthingnative.s
 REM
 goto :eos
 
+
 :cleanBeforeBuild
 REM
 REM Syntax:
@@ -98,50 +98,29 @@ IF NOT "%SKIP_CHECKOUT_SRC%" == "1" rd /s /q "syncthing\src\github.com\syncthing
 REM
 goto :eof
 
-:applyGoDev
+
+:getRequiredSynchtingNativeVersion
+REM 
+REM Get "versionMajor"
+SET VERSION_MAJOR=
+FOR /F "tokens=2 delims== " %%A IN ('type "%SCRIPT_PATH%app\versions.gradle" 2^>^&1 ^| findstr "versionMajor"') DO SET VERSION_MAJOR=%%A
+SET VERSION_MAJOR=%VERSION_MAJOR:"=%
+REM 
+REM Get "versionMinor"
+SET VERSION_MINOR=
+FOR /F "tokens=2 delims== " %%A IN ('type "%SCRIPT_PATH%app\versions.gradle" 2^>^&1 ^| findstr "versionMinor"') DO SET VERSION_MINOR=%%A
+SET VERSION_MINOR=%VERSION_MINOR:"=%
+REM 
+REM Get "versionPatch"
+SET VERSION_PATCH=
+FOR /F "tokens=2 delims== " %%A IN ('type "%SCRIPT_PATH%app\versions.gradle" 2^>^&1 ^| findstr "versionPatch"') DO SET VERSION_PATCH=%%A
+SET VERSION_PATCH=%VERSION_PATCH:"=%
 REM
-REM Syntax:
-REM 	call :applyGoDev
-REM
-echo [INFO] Using go-dev instead of go-stable for this build ...
-type "syncthing\build-syncthing.py" 2> NUL: | psreplace "GO_EXPECTED_SHASUM_WINDOWS = '2f4849b512fffb2cf2028608aa066cc1b79e730fd146c7b89015797162f08ec5'" "GO_EXPECTED_SHASUM_WINDOWS = '2fff556d0adaa6fda8300b0751a91a593c359f27265bc0fc7594f9eba794f907'" "syncthing\build-syncthing.py"
+SET "SYNCTHING_NATIVE_REQUIRED_VERSION=v%VERSION_MAJOR%.%VERSION_MINOR%.%VERSION_PATCH%"
+echo [INFO] SYNCTHING_NATIVE_REQUIRED_VERSION=[%SYNCTHING_NATIVE_REQUIRED_VERSION%]"
 REM
 goto :eof
 
-:revertGoDev
-REM
-REM Syntax:
-REM 	call :revertGoDev
-REM
-echo [INFO] Reverting to go-stable ...
-git checkout -- "syncthing\build-syncthing.py"
-SET TMP_RESULT=%ERRORLEVEL%
-IF NOT "%TMP_RESULT%" == "0" echo [ERROR] git checkout "build-syncthing.py" FAILED. & pause & goto :eof
-REM
-goto :eof
-
-:applyGoDevByCommit
-REM
-REM [UNUSED-FUNC]
-REM
-REM Syntax:
-REM 	call :applyGoDevByCommit [commit/revert]
-REM
-REM Consts.
-SET GO_DEV_COMMIT=032c562105b871c2a77e59e3be3de2ada26a365d
-REM
-IF "%1" == "commit" echo [INFO] Using go-dev instead of go-stable for this build ... & git cherry-pick --quiet %GO_DEV_COMMIT% & goto :eof
-REM
-REM Revert without leaving a commit on the master.
-SET TMP_GODEV_COMMIT_CNT=0
-for /f "delims= " %%A IN ('git log -1 --pretty^=oneline 2^>^&1 ^| findstr /I /C:"Build with godev"') do SET TMP_GODEV_COMMIT_CNT=1
-IF NOT "%TMP_GODEV_COMMIT_CNT%" == "1" echo [ERROR] Failed to revert go-dev to go-stable - commit not found. & pause & goto :eof
-echo [INFO] Reverting to go-stable ...
-git reset --quiet --hard HEAD~1
-SET TMP_RESULT=%ERRORLEVEL%
-IF NOT "%TMP_RESULT%" == "0" echo [ERROR] git reset FAILED. & pause & goto :eof
-REM
-goto :eof
 
 :eos
 REM

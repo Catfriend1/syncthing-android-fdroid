@@ -1,4 +1,4 @@
-* Syncthing v1.26.1
+* Syncthing v1.27.0
 
 Enhanced
 --
@@ -6,9 +6,10 @@ Enhanced
 
 Fixes
 --
-- Fix notification permission revoked case
+-
 
 Other
 --
-- Updated Go dependency to 1.21.4
-- Updated NDK dependency to r26b
+- Experimental: Make ignore doze permission recommended instead of mandatory (#1058)
+- Thanks to @acolomb we got big improvements in community translation handling :-)
+
