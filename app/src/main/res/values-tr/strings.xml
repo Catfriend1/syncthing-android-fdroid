@@ -233,7 +233,7 @@
     <string name="key_generation_success">Özel veri alışverişi için güvenli anahtarlar başarılı olarak üretildi.</string>
     <string name="welcome_text">Syncthing bir açık kaynaklı dosya eşitleme uygulamasıdır. Diğer cihazlarla veri paylaşmak için onların benzersiz cihaz kimliklerini cihaz listesine eklemeniz gerekir. Daha sonra hangi klasörlerin hangi cihazlarla paylaşılacağını seçebilirsiniz.
 \n
-\nLütfen karşılaştığınız herhangi bir sorunu Github aracılığıyla bildirin.</string>
+\nLütfen karşılaştığınız herhangi bir sorunu GitHub aracılığıyla bildirin.</string>
     <string name="notification_permission_desc">Yeni cihaz bağlantıları, klasör paylaşım istekleri ile ilgili bildirimleri göstermek ve hizmeti canlı ve bağlı tutmak için gereklidir.</string>
     <string name="reason">Sebep:</string>
     <string name="qs_schedule_disabled">Zamanlama etkisizleştirildi</string>
@@ -627,11 +627,11 @@
     <string name="versioning_type_external">Harici</string>
     <string name="folder_type_send_only">Yalnızca Gönder</string>
     <string name="folder_type_receive_only">Yalnızca Al</string>
-    <string name="power_source_ac_and_battery_power">Piriz ve pil gücü.</string>
+    <string name="power_source_ac_and_battery_power">Priz ve pil gücü.</string>
     <string name="versioning_type_none">Yok</string>
     <string name="folder_type_send_receive">Gönder ve Al</string>
     <string name="pull_order_largest_first">Önce En Büyük Olan</string>
-    <string name="power_source_ac_power">Piriz gücü.</string>
+    <string name="power_source_ac_power">Priz gücü.</string>
     <string name="versioning_type_simple">Basit</string>
     <string name="pull_order_random">Rastgele</string>
     <string name="pull_order_oldest_first">Önce En Eski Olan</string>
