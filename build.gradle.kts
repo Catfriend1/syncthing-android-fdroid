@@ -8,7 +8,7 @@ buildscript {
         set("versionMajor", 1)
         set("versionMinor", 28)
         set("versionPatch", 1)
-        set("versionWrapper", 0)
+        set("versionWrapper", 1)
     }
 
     repositories {
@@ -19,7 +19,7 @@ buildscript {
 
     dependencies {
         classpath("com.android.tools.build:gradle:8.6.1")
-        classpath("com.github.ben-manes:gradle-versions-plugin:0.42.0")
+        classpath("com.github.ben-manes:gradle-versions-plugin:0.51.0")
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
