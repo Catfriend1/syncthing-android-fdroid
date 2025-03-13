@@ -7,19 +7,19 @@ plugins {
 dependencies {
     androidTestImplementation("androidx.annotation:annotation:1.2.0")
     androidTestImplementation("androidx.test:rules:1.6.1")
-    annotationProcessor("com.google.dagger:dagger-compiler:2.54")
+    annotationProcessor("com.google.dagger:dagger-compiler:2.55")
     implementation("androidx.preference:preference:1.2.1")
     implementation("androidx.constraintlayout:constraintlayout:2.0.4")
     implementation("androidx.core:core:1.15.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
-    implementation("androidx.fragment:fragment:1.8.5")
+    implementation("androidx.fragment:fragment:1.8.6")
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("com.android.volley:volley:1.2.1")
     implementation("com.annimon:stream:1.2.2")
     implementation("com.google.android.material:material:1.4.0")
-    implementation("com.google.code.gson:gson:2.11.0")
-    implementation("com.google.dagger:dagger:2.54")
+    implementation("com.google.code.gson:gson:2.12.1")
+    implementation("com.google.dagger:dagger:2.55")
     implementation("com.google.guava:guava:33.4.0-android")
     // Do not upgrade zxing:core beyond 3.3.0 to ensure Android 6.0 compatibility, see issue #761.
     implementation("com.google.zxing:core:3.3.0")
@@ -28,10 +28,10 @@ dependencies {
     implementation("org.mindrot:jbcrypt:0.4")
 
     constraints {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0") {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.10") {
             because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
         }
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0") {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.10") {
             because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
         }
     }
