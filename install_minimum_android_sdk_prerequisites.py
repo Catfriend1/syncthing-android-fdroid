@@ -7,10 +7,14 @@ import sys
 import platform
 #
 # Script Compatibility:
-# - Python 3.9.6
+# - Python 3.9.13
 #
-# Run script from command line with:
-#   python install_minimum_android_sdk_prerequisites.py
+# Run script from command line
+## Debian Linux / WSL
+### python3 install_minimum_android_sdk_prerequisites.py
+##
+## Windows
+### python install_minimum_android_sdk_prerequisites.py
 #
 
 SUPPORTED_PYTHON_PLATFORMS = ['Windows', 'Linux', 'Darwin']
@@ -21,6 +25,8 @@ ANDROID_SDK_TOOLS_VERSION = '11076708'
 ANDROID_SDK_TOOLS_SHASUM_LINUX = '2d2d50857e4eb553af5a6dc3ad507a17adf43d115264b1afc116f95c92e5e258'
 ANDROID_SDK_TOOLS_SHASUM_WINDOWS = '4d6931209eebb1bfb7c7e8b240a6a3cb3ab24479ea294f3539429574b1eec862'
 ANDROID_SDK_VERSION = '35'
+
+ANDROID_NDK_VERSION = '28.0.13004108'
 
 def fail(message, *args, **kwargs):
     print((message % args).format(**kwargs))
@@ -100,7 +106,7 @@ def install_sdk_tools():
         fail('Error: SHA-256 checksum ' + found_shasum + ' of downloaded file does not match expected checksum ' + expected_shasum)
     print("[ok] Checksum of", zip_fullfn, "matches expected value.")
 
-    # Proceed with extraction of the NDK if necessary.
+    # Proceed with extraction of the SDK if necessary.
     sdk_tools_path = prerequisite_tools_dir + os.path.sep + 'cmdline-tools'
     if not os.path.isfile(sdk_tools_path + os.path.sep + "source.properties"):
         print("Extracting sdk-tools ...")
@@ -141,9 +147,6 @@ if platform.system() not in SUPPORTED_PYTHON_PLATFORMS:
     fail('Unsupported python platform %s. Supported platforms: %s', platform.system(),
          ', '.join(SUPPORTED_PYTHON_PLATFORMS))
 
-if not sys.platform == 'win32':
-    fail ('Script is currently supported to run under Windows only.')
-
 prerequisite_tools_dir = os.path.dirname(os.path.realpath(__file__)) + os.path.sep + ".." + os.path.sep + "syncthing-android-prereq"
 
 # Check if "sdk-manager" of sdk-tools package is available.
@@ -156,13 +159,26 @@ if not sdk_manager_bin:
         if not sdk_manager_bin:
             fail('Error: sdkmanager from sdk-tools package is not available on PATH.')
 print('sdk_manager_bin=\'' + sdk_manager_bin + '\'')
-
-# Windows only - Auto accept all sdkmanager licenses.
+#
+# Update SDK repository.
+print('[INFO] sdk_manager_bin --update')
+subprocess.check_call([sdk_manager_bin, '--update'])
+#
+# Auto accept all sdkmanager licenses.
 if sys.platform == 'win32':
-    subprocess.check_call([sdk_manager_bin, '--update'])
     powershell_bin = which('powershell')
     subprocess.check_call([powershell_bin, 'for($i=0;$i -lt ' + ANDROID_SDK_VERSION + ';$i++) { $response += \"y`n\"}; $response | sdkmanager --licenses'], stdout=subprocess.DEVNULL)
-    subprocess.check_call([sdk_manager_bin, 'platforms;android-' + ANDROID_SDK_VERSION])
-    subprocess.check_call([sdk_manager_bin, 'build-tools;' + ANDROID_SDK_VERSION + '.0.0'])
-
+else:
+    print('[INFO] sdkmanager --licenses')
+    os.system('yes | sdkmanager --licenses')
+#
+print('[INFO] sdk_manager_bin platforms;android-' + ANDROID_SDK_VERSION)
+subprocess.check_call([sdk_manager_bin, 'platforms;android-' + ANDROID_SDK_VERSION])
+#
+print('[INFO] sdk_manager_bin build-tools;' + ANDROID_SDK_VERSION + '.0.0')
+subprocess.check_call([sdk_manager_bin, 'build-tools;' + ANDROID_SDK_VERSION + '.0.0'])
+#
+print('[INFO] sdk_manager_bin ndk;' + ANDROID_NDK_VERSION)
+subprocess.check_call([sdk_manager_bin, 'ndk;' + ANDROID_NDK_VERSION])
+#
 print('Done.')
