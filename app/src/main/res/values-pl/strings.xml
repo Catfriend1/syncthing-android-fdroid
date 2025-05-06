@@ -365,7 +365,7 @@
     <string name="config_create_failed">Nie udało się stworzyć pliku konfiguracyjnego. Sprawdź dane wyjściowe logcat.</string>
     <!-- ID of the default folder created on first start (camera folder). Must only contain 'a-z0-9_-'. Parameter is the device name-->
     <string name="default_folder_id">%1$s-zdjęcia</string>
-    <string name="notification_crash_title">Syncthing uległ awarii (kod zakończenia %1$s)</string>
+    <string name="notification_crash_title">Awaria (kod wyjścia %1$s)</string>
     <string name="notifications_other_channel">Inne powiadomienia</string>
     <!-- RestApi -->
     <!-- Title of the notification shown when a restart is needed -->
@@ -707,4 +707,6 @@
     <string name="power_source_battery_power">Zasilanie bateryjne.</string>
     <string name="dialog_confirm_skip_ignore_doze_permission">Ostrożnie: jeśli SyncthingNative zostanie przerwany i zrobi coś dziwnego, będzie to wina użytkownika. Pomiń ten proces tylko wtedy, gdy urządzenie nie obsługuje udzielania uprawnień. Naprawdę pominąć?</string>
     <string name="sleep_interval_minutes_title">Czas trwania interwału wstrzymania synchronizacji</string>
+    <string name="start_into_web_gui_title">Rozpocznij bezpośrednio w interfejsie sieciowym</string>
+    <string name="start_into_web_gui_summary">Uruchamiając aplikację, otwórz interfejs sieciowy zamiast głównego ekranu</string>
 </resources>
