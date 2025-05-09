@@ -168,14 +168,6 @@
             android:singleLineTitle="false"
             android:defaultValue="false" />
 
-        <!-- Bind network -->
-        <CheckBoxPreference
-            android:key="bind_network"
-            android:title="@string/bind_network_title"
-            android:summary="@string/bind_network_summary"
-            android:singleLineTitle="false"
-            android:defaultValue="true" />
-
     </PreferenceScreen>
 
     <PreferenceScreen
@@ -297,6 +289,13 @@
             android:summary="@string/webui_debugging_summary"
             android:singleLineTitle="false"
             android:persistent="false" />
+
+        <Preference
+            android:key="clearStVersions"
+            android:title="@string/clear_stversions_title"
+            android:summary="@string/clear_stversions_summary"
+            android:persistent="false"
+            android:singleLineTitle="false" />
 
         <Preference
             android:key="downloadSupportBundle"
@@ -471,6 +470,28 @@
             android:key="os_open_file_limit"
             android:title="@string/os_open_file_limit"
             android:singleLineTitle="false" />
+
+        <Preference
+            android:title="@string/syncthing_forum_title"
+            android:summary="@string/syncthing_forum_summary">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:data="@string/syncthing_forum_url" />
+        </Preference>
+
+        <Preference
+            android:title="@string/privacy_title"
+            android:summary="@string/privacy_summary">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:data="@string/privacy_policy_url" />
+        </Preference>
+
+        <Preference
+                android:persistent="false"
+                android:key="open_source_licenses"
+                android:title="@string/open_source_licenses_title"
+                android:summary="@string/open_source_licenses_summary" />
 
     </PreferenceScreen>
 

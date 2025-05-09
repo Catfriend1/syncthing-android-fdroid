@@ -30,6 +30,7 @@ import androidx.core.content.ContextCompat;
 import com.google.common.collect.Sets;
 import com.nutomic.syncthingandroid.R;
 import com.nutomic.syncthingandroid.SyncthingApp;
+import com.nutomic.syncthingandroid.util.FileUtils;
 import com.nutomic.syncthingandroid.util.Util;
 
 import java.io.File;
@@ -125,6 +126,7 @@ public class FolderPickerActivity extends SyncthingActivity
             roots.remove(getExternalFilesDir(null));
             roots.remove(null);      // getExternalFilesDirs may return null for an ejected SDcard.
             roots.add(Environment.getExternalStorageDirectory());
+            roots.add(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES));
             roots.add(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC));
             roots.add(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES));
             roots.add(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS));
@@ -132,9 +134,9 @@ public class FolderPickerActivity extends SyncthingActivity
             roots.add(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS));
 
             // Add paths where we might have read-only access.
-            File[] storageRootFiles = new File("/storage/").listFiles();
-            if (storageRootFiles != null) {
-                Collections.addAll(roots, storageRootFiles);
+            File[] mountedStoragePaths = FileUtils.getMountedStoragePathsAsFileArray();
+            if (mountedStoragePaths != null) {
+                Collections.addAll(roots, mountedStoragePaths);
             }
             roots.add(new File("/"));
         }

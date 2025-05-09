@@ -544,9 +544,6 @@
     <string name="use_root_title">Run Syncthing as Superuser</string>
     <string name="use_root_summary">Running Syncthing as root allows it to write to folders Android normally restricts to be readonly accessed. Use this feature with caution.</string>
 
-    <string name="bind_network_title">Bind to active network</string>
-    <string name="bind_network_summary">Force to use WiFi even if there is no internet connection. If disabled, Syncthing may use mobile data in this case.</string>
-
     <string name="expert_mode_title">Expert mode</string>
 
     <string name="expert_mode_summary">Enabling this option will show advanced configuration options. You should have a look at the Syncthing Docs first to make sure you know how to use them correctly. Incorrect settings may cause battery drain, system resource exhaustion or incomplete synchronization.</string>
@@ -612,6 +609,11 @@
     <string name="webui_debugging_title">WebUI Debugging</string>
 
     <string name="webui_debugging_summary">Enable to start profiling and to be able to download a support bundle. Changing this option will restart Syncthing immediately.</string>
+
+    <string name="clear_stversions_title">Empty all versioning folders</string>
+    <string name="clear_stversions_summary">Files are moved to .stversions directory when replaced or deleted by Syncthing. You can probably find and recover accidentially deleted files there, but outdated versions of the files take storage space on your device.</string>
+    <string name="clear_stversions_question">This will delete all previous versions of files handled by Syncthing. Continue\?</string>
+    <string name="clear_stversions_done">Successfully cleared .stversions folders.</string>
 
     <string name="download_support_bundle_title">Download Support Bundle</string>
 
@@ -709,6 +711,7 @@
     <!-- Syncthing was reset -->
     <string name="st_reset_deltas_done">Successfully reset Syncthing\'s delta indexes</string>
 
+    <!-- Settings / About -->
     <string name="category_about">About</string>
 
     <string name="verbose_log_title">Verbose log</string>
@@ -722,6 +725,17 @@
 
     <!-- Summary for the log activity -->
     <string name="open_log_summary">Open the Syncthing and Android log window</string>
+
+    <!-- Menu item linking support forum -->
+    <string name="syncthing_forum_title">Syncthing Forum</string>
+    <string name="syncthing_forum_summary">Go to the Syncthing Forum and get support</string>
+    <string name="syncthing_forum_url" translatable="false">https://forum.syncthing.net/</string>
+
+    <!-- Menu item linking privacy policy -->
+    <string name="privacy_title">Privacy Policy</string>
+    <string name="privacy_summary">Open syncthing-android\'s privacy policy, which covers usage (if any) of personal data, e.g. location.</string>
+    <string name="privacy_policy_url" translatable="false">https://syncthing.net/android-privacy-policy</string>
+
     <!-- Settings item that opens issue tracker -->
     <string name="report_issue_title">Report Issue</string>
 
@@ -754,6 +768,12 @@
 
     <!-- Title of the preference showing the OS open file limit -->
     <string name="os_open_file_limit">Android Open File Limit</string>
+    
+    <!-- Title of the preference showing the Open Source Licenses -->
+    <string name="open_source_licenses_title">Open Source Licenses</string>
+    
+    <!-- Summary of the preference showing the Open Source Licenses -->
+    <string name="open_source_licenses_summary">Show the open source licenses used</string>
 
     <!-- FolderPickerAcitivity -->
 
