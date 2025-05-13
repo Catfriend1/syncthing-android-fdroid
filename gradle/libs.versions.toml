@@ -8,7 +8,7 @@ compose-material-icons = "1.7.8"
 constraintlayout = "2.0.4"
 core-ktx = "1.16.0"
 dagger = "2.56.2"
-documentfile = "1.0.1"
+documentfile = "1.1.0"
 fragment-ktx = "1.8.6"
 gson = "2.13.0"
 guava = "33.4.8-android"
@@ -21,6 +21,7 @@ recyclerview = "1.4.0"
 rules = "1.6.1"
 stream = "1.2.2"
 volley = "1.2.1"
+vyarus-use-python = "4.1.0"
 zxing-android-embedded = "4.3.0"
 # Do not upgrade zxing:core beyond 3.3.0 to ensure Android 6.0 compatibility, see issue #761.
 zxing-core = "3.3.0"
@@ -62,3 +63,4 @@ aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "abo
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+vyarus-use-python = { id = "ru.vyarus.use-python", version.ref = "vyarus-use-python" }

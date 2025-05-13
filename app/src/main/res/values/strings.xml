@@ -264,6 +264,10 @@
     <string name="folder_ignore_delete_caption">Ignore Delete</string>
     <string name="folder_ignore_delete_description">Expert option that affects the handling of incoming index updates. When set, incoming updates with the delete flag set are ignored. See https://docs.syncthing.net/advanced/folder-ignoredelete.html</string>
 
+    <!-- Setting title and description -->
+    <string name="folder_run_script_caption">Run Script</string>
+    <string name="folder_run_script_description">Expert option to run scripts after a folder changes its sync state. Scripts at \'.stfolder/*.sh\' will be executed, other locations are not supported for security considerations.\nExample script call: \'.stfolder/rename-files.sh sync_complete\'</string>
+
     <!-- Setting title -->
     <string name="folder_pause">Pause Folder</string>
 
@@ -730,6 +734,11 @@
     <string name="syncthing_forum_title">Syncthing Forum</string>
     <string name="syncthing_forum_summary">Go to the Syncthing Forum and get support</string>
     <string name="syncthing_forum_url" translatable="false">https://forum.syncthing.net/</string>
+
+    <!-- Menu item for pizza -->
+    <string name="pizza_url_title">» Cats love pizza « 😺🍕</string>
+    <string name="pizza_url_summary">With just one tap, you can leave a warm slice of kindness - topped with extra good vibes to keep the cats happily purring along.</string>
+    <string name="pizza_url" translatable="false">https://liberapay.com/cf4friends/donate</string>
 
     <!-- Menu item linking privacy policy -->
     <string name="privacy_title">Privacy Policy</string>
