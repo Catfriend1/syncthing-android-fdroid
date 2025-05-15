@@ -60,8 +60,8 @@ android {
         applicationId = "com.github.catfriend1.syncthingandroid"
         minSdk = 21
         targetSdk = 35
-        versionCode = 1290602
-        versionName = "1.29.6.2"
+        versionCode = 1290603
+        versionName = "1.29.6.3"
         testApplicationId = "com.github.catfriend1.syncthingandroid.test"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
