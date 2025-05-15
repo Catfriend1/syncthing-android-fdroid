@@ -494,7 +494,6 @@
     <string name="status_outofsync">未同期</string>
     <!-- Format string for folder size, eg "500 MiB / 1 GiB" -->
     <string name="folder_size_format">%1$s / %2$s</string>
-    <string name="appconfig_receiver_background_enabled">バックグラウンドでの実行が有効になっている場合、Syncthing の停止はサポートされていません。</string>
     <!-- Titles used in the folder type dialog and folder type button in the folder activity -->
     <string name="folder_type">フォルダタイプ</string>
     <!-- Displays the current folder type in the folder activity -->
@@ -595,4 +594,5 @@
     <string name="location_permission_desc">Syncthingは、特定のWi-Fiネットワークでのみ動作するように設定できます。Androidでは、現在接続中のWi-Fiネットワーク名を取得するために位置情報の許可が必要です。この機能を利用したい場合は、上のボタンを押してください。この手順をスキップすることも可能です。詳細はプライバシーポリシーをご覧ください。</string>
     <string name="deviceEncryptionPasswordHint">信頼できない場合は暗号化パスワードを入力してください</string>
     <string name="folder_pause">フォルダを一時停止</string>
+    <string name="folder_run_script_caption">スクリプトを実行</string>
 </resources>
